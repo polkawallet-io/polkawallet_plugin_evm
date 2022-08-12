@@ -11,10 +11,10 @@ import 'package:polkawallet_sdk/storage/keyring.dart';
 class PluginEvm extends PolkawalletPlugin {
   PluginEvm({networkName = 'acala'})
       : basic = PluginBasicData(
-          name: "evm-$networkName",
-          icon: getIcon(networkName),
-          jsCodeVersion: 33401,
-        ),
+            name: "evm-$networkName",
+            icon: getIcon(networkName),
+            jsCodeVersion: 33401,
+            isTestNet: false),
         network = networkName;
   @override
   final PluginBasicData basic;
