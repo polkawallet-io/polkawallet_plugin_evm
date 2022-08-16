@@ -2,6 +2,7 @@ library polkawallet_plugin_evm;
 
 import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
+import 'package:polkawallet_plugin_evm/page/assets/manageAssetsPage.dart';
 import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
 import 'package:polkawallet_sdk/api/types/networkParams.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -37,8 +38,9 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   Map<String, WidgetBuilder> getRoutes(Keyring keyring) {
-    // TODO: implement getRoutes
-    return {};
+    return {
+      ManageAssetsPage.route: (_) => ManageAssetsPage(this),
+    };
   }
 
   @override
