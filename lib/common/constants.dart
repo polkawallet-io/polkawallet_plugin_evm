@@ -1,34 +1,25 @@
+const network_acala = 'acala';
+const network_karura = 'karura';
+
+const network_native_token = {network_acala: 'ACA', network_karura: 'KAR'};
+
 const network_node_list = {
-  'acala': [
+  network_acala: [
     {
       'name': 'acala (via RadiumBlock)',
       'ss58': 2,
       'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
       'chainId': '',
       'networkType': 'ethereum',
-    },
-    {
-      'name': 'acala (via RadiumBlock)',
-      'ss58': 2,
-      'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
-      'chainId': '',
-      'networkType': 'ethereum',
-    },
+    }
   ],
-  'karura': [
+  network_karura: [
     {
       'name': 'karura (via RadiumBlock)',
       'ss58': 2,
       'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
       'chainId': '',
       'networkType': 'ethereum',
-    },
-    {
-      'name': 'karura (via RadiumBlock)',
-      'ss58': 2,
-      'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
-      'chainId': '',
-      'networkType': 'ethereum',
-    },
+    }
   ]
 };
