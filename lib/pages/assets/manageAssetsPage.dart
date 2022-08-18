@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -20,10 +21,9 @@ import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 import 'package:rive/src/widgets/rive_animation.dart';
 
 class ManageAssetsPage extends StatefulWidget {
-  ManageAssetsPage(this.plugin, this.store);
+  ManageAssetsPage(this.plugin);
 
   PluginEvm plugin;
-  PluginStore? store;
 
   static const String route = 'evm/assets/manage';
 
@@ -43,6 +43,8 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
 
   List<TokenBalanceData> _seachBalance = [];
 
+  bool hasFocus = false;
+
   // int _assetsTypeIndex = 0;
 
   Future<void> _onSave() async {
@@ -56,7 +58,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     }
 
     final args = ModalRoute.of(context)!.settings.arguments as Map;
-    widget.store?.assets.setCustomAssets(
+    widget.plugin.store?.assets.setCustomAssets(
         args['current'] as KeyPairData, widget.plugin.basic.name!, config);
 
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
@@ -87,7 +89,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       final nativeToken = widget.plugin.nativeToken.toUpperCase();
       final Map<String, bool> defaultVisibleMap = {nativeToken: true};
 
-      if (widget.store!.assets.customAssets.keys.length == 0) {
+      if (widget.plugin.store!.assets.customAssets.keys.length == 0) {
         final defaultList = widget.plugin.defaultTokens.toList();
         defaultList.forEach((token) {
           defaultVisibleMap[token] = true;
@@ -101,7 +103,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       } else {
         widget.plugin.noneNativeTokensAll.forEach((token) {
           defaultVisibleMap[token.symbol!] =
-              widget.store!.assets.customAssets[token.symbol!]!;
+              widget.plugin.store!.assets.customAssets[token.symbol!]!;
         });
       }
 
@@ -119,7 +121,13 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   }
 
   Future<void> _onInputChange(String input) async {
-    if (Fmt.isAddressETH(input.trim())) {
+    setState(() {
+      _seachBalance = [];
+    });
+    if (Fmt.isAddressETH(input.trim()) &&
+        widget.plugin.noneNativeTokensAll
+                .indexWhere((element) => element.id == input.trim()) <
+            0) {
       if (_delayTimer != null) {
         _delayTimer!.cancel();
       }
@@ -129,14 +137,30 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           setState(() {
             _isLoading = true;
           });
-          //[{contractAddress: 0x8dbaeafafc5f899ea9f3126018439aa99f359883, symbol: aUSD, name: Acala Dollar (Wormhole), decimals: 12, amount: 138000000000000}]
           final tokenBalance = await widget.plugin.sdk.api.eth.account
               .getTokenBalance(
                   (args['current'] as KeyPairData).address!, [input.trim()]);
-          // tokenBalance.map((e) => TokenBalanceData());
-          // print("$tokenBalance");
+          _seachBalance = (tokenBalance ?? [])
+              .map((e) => TokenBalanceData(
+                  id: e['contractAddress'],
+                  symbol: e['symbol'],
+                  name: e['symbol'].toString().toUpperCase(),
+                  fullName: e['name'],
+                  decimals: e['decimals'],
+                  amount: e['amount']))
+              .toList();
           setState(() {
             _isLoading = false;
+            _seachBalance = (tokenBalance ?? [])
+                .map((e) => TokenBalanceData(
+                    id: e['contractAddress'],
+                    tokenNameId: e['symbol'],
+                    symbol: e['symbol'],
+                    name: e['symbol'].toString().toUpperCase(),
+                    fullName: e['name'],
+                    decimals: e['decimals'],
+                    amount: e['amount']))
+                .toList();
           });
         } catch (_) {
           setState(() {
@@ -144,16 +168,19 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           });
         }
       });
-    } else {
-      setState(() {
-        _filter = _filterCtrl.text.trim().toUpperCase();
-      });
     }
+
+    setState(() {
+      _filter = _filterCtrl.text.trim().toUpperCase();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
+
+    final args = ModalRoute.of(context)!.settings.arguments as Map;
+    widget.plugin.store!.assets.loadCache(args['current'] as KeyPairData);
 
     // final isStateMint =
     //     widget.service.plugin.basic.name == para_chain_name_statemine ||
@@ -170,22 +197,6 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     ];
     list.addAll(widget.plugin.noneNativeTokensAll);
 
-    //USDT erc20 Contract :0xdAC17F958D2ee523a2206206994597C13D831ec7
-
-    // if (_assetsTypeIndex != 0) {
-    //   var type = "Token";
-    //   if (assetsType[_assetsTypeIndex] == "Cross-chain") {
-    //     type = "ForeignAsset";
-    //   } else if (assetsType[_assetsTypeIndex] == "Taiga token") {
-    //     type = "TaigaAsset";
-    //   } else if (assetsType[_assetsTypeIndex] == "LP Tokens") {
-    //     type = "DexShare";
-    //   } else if (assetsType[_assetsTypeIndex] == "ERC-20") {
-    //     type = "Erc20";
-    //   }
-    //   list.retainWhere((element) => element.type == type);
-    // }
-
     list.retainWhere((token) =>
         token.symbol!.toUpperCase().contains(_filter) ||
         (token.name ?? '').toUpperCase().contains(_filter) ||
@@ -193,6 +204,14 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
 
     if (_hide0) {
       list.removeWhere((token) => Fmt.balanceInt(token.amount) == BigInt.zero);
+    }
+
+    if (hasFocus) {
+      _seachBalance.forEach((e) {
+        if (list.indexWhere((element) => element.id == e.id) < 0) {
+          list.add(e);
+        }
+      });
     }
 
     return Scaffold(
@@ -232,205 +251,350 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           children: [
             Container(
                 margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-                child: v3.TextInputWidget(
-                  decoration: v3.InputDecorationV3(
-                    contentPadding: EdgeInsets.zero,
-                    hintText: dic['manage.filter'],
-                    hintStyle: Theme.of(context).textTheme.headline4,
-                    icon: _isLoading
-                        ? Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            width: 14,
-                            height: 14,
-                            child: const RiveAnimation.asset(
-                              'assets/images/loading.riv',
-                              fit: BoxFit.none,
-                            ),
-                          )
-                        : Icon(
-                            Icons.search,
-                            color: Theme.of(context).disabledColor,
-                            size: 20,
-                          ),
-                  ),
-                  controller: _filterCtrl,
-                  style: Theme.of(context).textTheme.headline4,
-                  onChanged: _onInputChange,
-                )),
-            Container(
-              margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          color: _hide0
-                              ? Theme.of(context).toggleableActiveColor
-                              : Theme.of(context).disabledColor,
-                          size: 14,
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(left: 4, right: 16),
-                          child: Text(
-                            dic['manage.hide']!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headline5
-                                ?.copyWith(
-                                    fontFamily:
-                                        UI.getFontFamily('SF_Pro', context),
-                                    color: _hide0
-                                        ? Theme.of(context)
-                                            .toggleableActiveColor
-                                        : Theme.of(context).disabledColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
+                child: Focus(
+                    onFocusChange: (hasFocus) async {
                       setState(() {
-                        _hide0 = !_hide0;
+                        this.hasFocus = hasFocus;
                       });
                     },
-                  ),
-                  // Visibility(
-                  //     visible: widget.service.plugin.basic.name ==
-                  //             plugin_name_karura ||
-                  //         widget.service.plugin.basic.name == plugin_name_acala,
-                  //     child: GestureDetector(
-                  //       child: SvgPicture.asset(
-                  //         'assets/images/icon_screening.svg',
-                  //         color: Colors.white,
-                  //         width: 22,
-                  //       ),
-                  //       onTap: () {
-                  //         final dic = I18n.of(context)
-                  //             .getDic(i18n_full_dic_ui, 'common');
-                  //         showCupertinoModalPopup(
-                  //           context: context,
-                  //           builder: (context) {
-                  //             return PolkawalletActionSheet(
-                  //               actions: <Widget>[
-                  //                 ...assetsType.map((element) {
-                  //                   final index = assetsType.indexOf(element);
-                  //                   return PolkawalletActionSheetAction(
-                  //                     isDefaultAction:
-                  //                         index == _assetsTypeIndex,
-                  //                     onPressed: () {
-                  //                       if (index != _assetsTypeIndex) {
-                  //                         setState(() {
-                  //                           _assetsTypeIndex = index;
-                  //                         });
-                  //                       }
-                  //                       Navigator.pop(context);
-                  //                     },
-                  //                     child: Text(element),
-                  //                   );
-                  //                 }).toList()
-                  //               ],
-                  //               cancelButton: PolkawalletActionSheetAction(
-                  //                 onPressed: () {
-                  //                   Navigator.pop(context);
-                  //                 },
-                  //                 child: Text(dic['cancel']),
-                  //               ),
-                  //             );
-                  //           },
-                  //         );
-                  //       },
-                  //     ))
-                ],
-              ),
-            ),
+                    child: v3.TextInputWidget(
+                      decoration: v3.InputDecorationV3(
+                        contentPadding: EdgeInsets.zero,
+                        hintText: dic['manage.filter'],
+                        hintStyle: Theme.of(context).textTheme.headline4,
+                        icon: _isLoading
+                            ? Container(
+                                margin: const EdgeInsets.only(left: 4),
+                                width: 14,
+                                height: 14,
+                                child: const RiveAnimation.asset(
+                                  'assets/images/loading.riv',
+                                  fit: BoxFit.none,
+                                ),
+                              )
+                            : Icon(
+                                Icons.search,
+                                color: Theme.of(context).disabledColor,
+                                size: 20,
+                              ),
+                      ),
+                      controller: _filterCtrl,
+                      style: Theme.of(context).textTheme.headline4,
+                      onChanged: _onInputChange,
+                    ))),
             Expanded(
-              child: _tokenVisible.keys.length == 0
-                  ? Center(
-                      child: CupertinoActivityIndicator(
-                          color: const Color(0xFF3C3C44)))
-                  : Container(
-                      color: UI.isDarkTheme(context)
-                          ? Color(0xFF3D3D3D)
-                          : Colors.transparent,
-                      child: ListView.builder(
-                        physics: BouncingScrollPhysics(),
-                        padding: EdgeInsets.only(bottom: 16),
-                        itemCount: list.length,
-                        itemBuilder: (_, i) {
-                          return Column(
-                            children: [
-                              Container(
-                                color: Colors.transparent,
-                                child: ListTile(
-                                  dense: list[i].fullName != null,
-                                  leading: TokenIcon(
-                                    list[i].symbol!,
-                                    widget.plugin.tokenIcons,
-                                    symbol: list[i].symbol,
-                                  ),
-                                  title: Text(list[i].name!,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headline4
-                                          ?.copyWith(
-                                              fontWeight: FontWeight.w600)),
-                                  subtitle: list[i].fullName != null
-                                      ? Text('${list[i].fullName}',
-                                          maxLines: 2,
-                                          style: TextStyle(
-                                              fontSize:
-                                                  UI.getTextSize(10, context),
-                                              fontWeight: FontWeight.w300,
-                                              color: Theme.of(context)
-                                                  .textTheme
-                                                  .headline1
-                                                  ?.color,
-                                              fontFamily: UI.getFontFamily(
-                                                  'SF_Pro', context)))
-                                      : null,
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
+                child: hasFocus
+                    ? Container(
+                        child: Container(
+                            color: UI.isDarkTheme(context)
+                                ? Color(0xFF3D3D3D)
+                                : Colors.transparent,
+                            child: ListView.builder(
+                              physics: BouncingScrollPhysics(),
+                              padding: EdgeInsets.only(bottom: 16),
+                              itemCount: list.length,
+                              itemBuilder: (_, i) {
+                                final isImport = widget
+                                        .plugin.noneNativeTokensAll
+                                        .indexWhere((element) =>
+                                            element.id == list[i].id) >=
+                                    0;
+                                return Column(
+                                  children: [
+                                    Container(
+                                      color: Colors.transparent,
+                                      child: ListTile(
+                                        dense: list[i].fullName != null,
+                                        leading: TokenIcon(
+                                          list[i].symbol!,
+                                          widget.plugin.tokenIcons,
+                                          symbol: list[i].symbol,
+                                        ),
+                                        title: Text(list[i].name!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline4
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600)),
+                                        subtitle: list[i].fullName != null
+                                            ? Text('${list[i].fullName}',
+                                                maxLines: 2,
+                                                style: TextStyle(
+                                                    fontSize: UI.getTextSize(
+                                                        10, context),
+                                                    fontWeight: FontWeight.w300,
+                                                    color: Theme.of(context)
+                                                        .textTheme
+                                                        .headline1
+                                                        ?.color,
+                                                    fontFamily:
+                                                        UI.getFontFamily(
+                                                            'SF_Pro', context)))
+                                            : null,
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Padding(
+                                                padding: EdgeInsets.only(
+                                                    right: 18.w),
+                                                child: Text(
+                                                  Fmt.priceFloorBigInt(
+                                                      Fmt.balanceInt(
+                                                          list[i].amount),
+                                                      list[i].decimals!,
+                                                      lengthMax: 4),
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      letterSpacing: -0.6),
+                                                )),
+                                            Image.asset(
+                                              "assets/images/${(_tokenVisible[list[i].symbol] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
+                                              fit: BoxFit.contain,
+                                              width: 16.w,
+                                            )
+                                          ],
+                                        ),
+                                        onTap: () {
+                                          if (list[i].symbol !=
+                                              widget.plugin.nativeToken) {
+                                            if (!isImport) {
+                                              final args =
+                                                  ModalRoute.of(context)!
+                                                      .settings
+                                                      .arguments as Map;
+                                              final current = args['current']
+                                                  as KeyPairData;
+                                              //add to noneNativeTokensAll
+                                              widget.plugin.store!.assets
+                                                  .setTokenBalanceMap(
+                                                      widget.plugin
+                                                          .noneNativeTokensAll
+                                                        ..add(list[i]),
+                                                      current.address);
+                                            }
+                                            setState(() {
+                                              _tokenVisible[list[i].symbol!] =
+                                                  !(_tokenVisible[
+                                                          list[i].symbol] ??
+                                                      false);
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    Divider(
+                                      height: 1,
+                                    )
+                                  ],
+                                );
+                              },
+                            )),
+                      )
+                    : Column(
+                        children: [
+                          Container(
+                            margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  child: Row(
                                     children: [
-                                      Padding(
-                                          padding: EdgeInsets.only(right: 18.w),
-                                          child: Text(
-                                            Fmt.priceFloorBigInt(
-                                                Fmt.balanceInt(list[i].amount),
-                                                list[i].decimals!,
-                                                lengthMax: 4),
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: -0.6),
-                                          )),
-                                      Image.asset(
-                                        "assets/images/${(_tokenVisible[list[i].symbol] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
-                                        fit: BoxFit.contain,
-                                        width: 16.w,
-                                      )
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: _hide0
+                                            ? Theme.of(context)
+                                                .toggleableActiveColor
+                                            : Theme.of(context).disabledColor,
+                                        size: 14,
+                                      ),
+                                      Container(
+                                        margin:
+                                            EdgeInsets.only(left: 4, right: 16),
+                                        child: Text(
+                                          dic['manage.hide']!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline5
+                                              ?.copyWith(
+                                                  fontFamily: UI.getFontFamily(
+                                                      'SF_Pro', context),
+                                                  color: _hide0
+                                                      ? Theme.of(context)
+                                                          .toggleableActiveColor
+                                                      : Theme.of(context)
+                                                          .disabledColor),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   onTap: () {
-                                    if (list[i].symbol !=
-                                        widget.plugin.nativeToken) {
-                                      setState(() {
-                                        _tokenVisible[list[i].symbol!] =
-                                            !(_tokenVisible[list[i].symbol] ??
-                                                false);
-                                      });
-                                    }
+                                    setState(() {
+                                      _hide0 = !_hide0;
+                                    });
                                   },
                                 ),
-                              ),
-                              Divider(
-                                height: 1,
-                              )
-                            ],
-                          );
-                        },
+                                // Visibility(
+                                //     visible: widget.service.plugin.basic.name ==
+                                //             plugin_name_karura ||
+                                //         widget.service.plugin.basic.name == plugin_name_acala,
+                                //     child: GestureDetector(
+                                //       child: SvgPicture.asset(
+                                //         'assets/images/icon_screening.svg',
+                                //         color: Colors.white,
+                                //         width: 22,
+                                //       ),
+                                //       onTap: () {
+                                //         final dic = I18n.of(context)
+                                //             .getDic(i18n_full_dic_ui, 'common');
+                                //         showCupertinoModalPopup(
+                                //           context: context,
+                                //           builder: (context) {
+                                //             return PolkawalletActionSheet(
+                                //               actions: <Widget>[
+                                //                 ...assetsType.map((element) {
+                                //                   final index = assetsType.indexOf(element);
+                                //                   return PolkawalletActionSheetAction(
+                                //                     isDefaultAction:
+                                //                         index == _assetsTypeIndex,
+                                //                     onPressed: () {
+                                //                       if (index != _assetsTypeIndex) {
+                                //                         setState(() {
+                                //                           _assetsTypeIndex = index;
+                                //                         });
+                                //                       }
+                                //                       Navigator.pop(context);
+                                //                     },
+                                //                     child: Text(element),
+                                //                   );
+                                //                 }).toList()
+                                //               ],
+                                //               cancelButton: PolkawalletActionSheetAction(
+                                //                 onPressed: () {
+                                //                   Navigator.pop(context);
+                                //                 },
+                                //                 child: Text(dic['cancel']),
+                                //               ),
+                                //             );
+                                //           },
+                                //         );
+                                //       },
+                                //     ))
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: _tokenVisible.keys.length == 0
+                                ? Center(
+                                    child: CupertinoActivityIndicator(
+                                        color: const Color(0xFF3C3C44)))
+                                : Container(
+                                    color: UI.isDarkTheme(context)
+                                        ? Color(0xFF3D3D3D)
+                                        : Colors.transparent,
+                                    child: ListView.builder(
+                                      physics: BouncingScrollPhysics(),
+                                      padding: EdgeInsets.only(bottom: 16),
+                                      itemCount: list.length,
+                                      itemBuilder: (_, i) {
+                                        return Column(
+                                          children: [
+                                            Container(
+                                              color: Colors.transparent,
+                                              child: ListTile(
+                                                dense: list[i].fullName != null,
+                                                leading: TokenIcon(
+                                                  list[i].symbol!,
+                                                  widget.plugin.tokenIcons,
+                                                  symbol: list[i].symbol,
+                                                ),
+                                                title: Text(list[i].name!,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline4
+                                                        ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600)),
+                                                subtitle: list[i].fullName !=
+                                                        null
+                                                    ? Text(
+                                                        '${list[i].fullName}',
+                                                        maxLines: 2,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                                UI.getTextSize(
+                                                                    10,
+                                                                    context),
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .headline1
+                                                                ?.color,
+                                                            fontFamily: UI
+                                                                .getFontFamily(
+                                                                    'SF_Pro',
+                                                                    context)))
+                                                    : null,
+                                                trailing: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                right: 18.w),
+                                                        child: Text(
+                                                          Fmt.priceFloorBigInt(
+                                                              Fmt.balanceInt(
+                                                                  list[i]
+                                                                      .amount),
+                                                              list[i].decimals!,
+                                                              lengthMax: 4),
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              letterSpacing:
+                                                                  -0.6),
+                                                        )),
+                                                    Image.asset(
+                                                      "assets/images/${(_tokenVisible[list[i].symbol] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
+                                                      fit: BoxFit.contain,
+                                                      width: 16.w,
+                                                    )
+                                                  ],
+                                                ),
+                                                onTap: () {
+                                                  if (list[i].symbol !=
+                                                      widget
+                                                          .plugin.nativeToken) {
+                                                    setState(() {
+                                                      _tokenVisible[
+                                                              list[i].symbol!] =
+                                                          !(_tokenVisible[list[
+                                                                      i]
+                                                                  .symbol] ??
+                                                              false);
+                                                    });
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                            Divider(
+                                              height: 1,
+                                            )
+                                          ],
+                                        );
+                                      },
+                                    )),
+                          ),
+                        ],
                       )),
-            ),
           ],
         ),
       ),

@@ -8,7 +8,7 @@ const network_node_list = {
     {
       'name': 'acala (via RadiumBlock)',
       'ss58': 2,
-      'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
+      'endpoint': 'https://acala-dev.aca-dev.network/eth/http',
       'chainId': '',
       'networkType': 'ethereum',
     }

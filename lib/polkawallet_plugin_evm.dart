@@ -10,6 +10,8 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:polkawallet_sdk/plugin/index.dart';
 import 'package:polkawallet_sdk/storage/keyring.dart';
 import 'package:polkawallet_sdk/storage/keyringEVM.dart';
+import 'package:polkawallet_sdk/plugin/store/balances.dart';
+import 'package:get_storage/src/storage_impl.dart';
 
 class PluginEvm extends PolkawalletPlugin {
   PluginEvm({networkName = network_acala})
@@ -63,7 +65,7 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   Map<String, WidgetBuilder> getRoutes(Keyring keyring) {
     return {
-      ManageAssetsPage.route: (_) => ManageAssetsPage(this, _store),
+      ManageAssetsPage.route: (_) => ManageAssetsPage(this),
     };
   }
 
@@ -108,15 +110,25 @@ class PluginEvm extends PolkawalletPlugin {
     return all;
   }
 
+  @override
+  List<TokenBalanceData> get noneNativeTokensAll {
+    return store?.assets.tokenBalanceMap.values.toList() ?? [];
+  }
+
   PluginStore? _store;
+  PluginStore? get store => _store;
 
   @override
   Future<void> onWillStartEVM(KeyringEVM keyring) async {
     tokenIcons = _getTokenIcons();
 
     // _api = AcalaApi(AcalaService(this));
+
+    await GetStorage.init(this.basic.name ?? "plugin_evm");
     _store = PluginStore(this);
     _store!.init();
+
+    store!.assets.loadCache(keyring.current.toKeyPairData());
     // _service = PluginService(this, keyring);
 
     // _loadCacheData(keyring.current);
