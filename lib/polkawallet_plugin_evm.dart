@@ -16,6 +16,8 @@ class PluginEvm extends PolkawalletPlugin {
       : basic = PluginBasicData(
             name: "evm-$networkName",
             icon: getIcon(networkName),
+            primaryColor: _createMaterialColor(const Color(0xFF10B95D)),
+            gradientColor: const Color(0xFF9ABD16),
             jsCodeVersion: 33401,
             isTestNet: false),
         network = networkName;
@@ -23,6 +25,26 @@ class PluginEvm extends PolkawalletPlugin {
   final PluginBasicData basic;
 
   String network;
+
+  static MaterialColor _createMaterialColor(Color color) {
+    List strengths = <double>[.05];
+    Map swatch = <int, Color>{};
+    final int r = color.red, g = color.green, b = color.blue;
+
+    for (int i = 1; i < 10; i++) {
+      strengths.add(0.1 * i);
+    }
+    for (var strength in strengths) {
+      final double ds = 0.5 - strength;
+      swatch[(strength * 1000).round()] = Color.fromRGBO(
+        r + ((ds < 0 ? r : (255 - r)) * ds).round(),
+        g + ((ds < 0 ? g : (255 - g)) * ds).round(),
+        b + ((ds < 0 ? b : (255 - b)) * ds).round(),
+        1,
+      );
+    }
+    return MaterialColor(color.value, swatch as Map<int, Color>);
+  }
 
   @override
   List<HomeNavItem> getNavItems(BuildContext context, Keyring keyring) {
@@ -93,10 +115,6 @@ class PluginEvm extends PolkawalletPlugin {
     tokenIcons = _getTokenIcons();
 
     // _api = AcalaApi(AcalaService(this));
-
-    // await GetStorage.init(plugin_cache_key);
-
-    // _cache = StoreCache();
     _store = PluginStore(this);
     _store!.init();
     // _service = PluginService(this, keyring);
@@ -108,5 +126,15 @@ class PluginEvm extends PolkawalletPlugin {
     // _service!.assets.queryIconsSrc();
 
     // _service!.earn.getBlockDuration();
+    //
+  }
+
+  @override
+  Future<void> onStartedEVM(KeyringEVM keyring) async {
+    // _service!.connected = true;
+    if (keyring.current.address != null) {
+      // await _store?.swap.initDexTokens(this);
+      // _subscribeTokenBalances(keyring.current);
+    }
   }
 }

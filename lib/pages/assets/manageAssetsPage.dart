@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,6 +17,7 @@ import 'package:polkawallet_ui/utils/i18n.dart';
 import 'package:polkawallet_ui/utils/index.dart';
 import 'package:polkawallet_ui/components/v3/dialog.dart';
 import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
+import 'package:rive/src/widgets/rive_animation.dart';
 
 class ManageAssetsPage extends StatefulWidget {
   ManageAssetsPage(this.plugin, this.store);
@@ -22,7 +25,7 @@ class ManageAssetsPage extends StatefulWidget {
   PluginEvm plugin;
   PluginStore? store;
 
-  static final String route = 'evm/assets/manage';
+  static const String route = 'evm/assets/manage';
 
   @override
   _ManageAssetsPageState createState() => _ManageAssetsPageState();
@@ -35,7 +38,12 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   String _filter = '';
   Map<String, bool> _tokenVisible = {};
 
-  int _assetsTypeIndex = 0;
+  Timer? _delayTimer;
+  bool _isLoading = false;
+
+  List<TokenBalanceData> _seachBalance = [];
+
+  // int _assetsTypeIndex = 0;
 
   Future<void> _onSave() async {
     final config = Map<String, bool>.of(_tokenVisible);
@@ -110,6 +118,39 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     super.dispose();
   }
 
+  Future<void> _onInputChange(String input) async {
+    if (Fmt.isAddressETH(input.trim())) {
+      if (_delayTimer != null) {
+        _delayTimer!.cancel();
+      }
+      _delayTimer = Timer(Duration(milliseconds: 500), () async {
+        final args = ModalRoute.of(context)!.settings.arguments as Map;
+        try {
+          setState(() {
+            _isLoading = true;
+          });
+          //[{contractAddress: 0x8dbaeafafc5f899ea9f3126018439aa99f359883, symbol: aUSD, name: Acala Dollar (Wormhole), decimals: 12, amount: 138000000000000}]
+          final tokenBalance = await widget.plugin.sdk.api.eth.account
+              .getTokenBalance(
+                  (args['current'] as KeyPairData).address!, [input.trim()]);
+          // tokenBalance.map((e) => TokenBalanceData());
+          // print("$tokenBalance");
+          setState(() {
+            _isLoading = false;
+          });
+        } catch (_) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+    } else {
+      setState(() {
+        _filter = _filterCtrl.text.trim().toUpperCase();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
@@ -121,7 +162,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     final List<TokenBalanceData> list = [
       TokenBalanceData(
           amount: widget.plugin.balances.native?.freeBalance?.toString() ?? "",
-          decimals: 12,
+          decimals: 18,
           id: widget.plugin.nativeToken.toUpperCase(),
           symbol: widget.plugin.nativeToken.toUpperCase(),
           name: widget.plugin.nativeToken.toUpperCase(),
@@ -196,19 +237,25 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     contentPadding: EdgeInsets.zero,
                     hintText: dic['manage.filter'],
                     hintStyle: Theme.of(context).textTheme.headline4,
-                    icon: Icon(
-                      Icons.search,
-                      color: Theme.of(context).disabledColor,
-                      size: 20,
-                    ),
+                    icon: _isLoading
+                        ? Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            width: 14,
+                            height: 14,
+                            child: const RiveAnimation.asset(
+                              'assets/images/loading.riv',
+                              fit: BoxFit.none,
+                            ),
+                          )
+                        : Icon(
+                            Icons.search,
+                            color: Theme.of(context).disabledColor,
+                            size: 20,
+                          ),
                   ),
                   controller: _filterCtrl,
                   style: Theme.of(context).textTheme.headline4,
-                  onChanged: (v) {
-                    setState(() {
-                      _filter = _filterCtrl.text.trim().toUpperCase();
-                    });
-                  },
+                  onChanged: _onInputChange,
                 )),
             Container(
               margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
