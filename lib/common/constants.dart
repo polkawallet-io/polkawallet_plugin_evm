@@ -9,7 +9,7 @@ const network_node_list = {
       'name': 'acala (via RadiumBlock)',
       'ss58': 2,
       'endpoint': 'https://acala-dev.aca-dev.network/eth/http',
-      'chainId': '',
+      'chainId': '596',
       'networkType': 'ethereum',
     }
   ],
@@ -18,8 +18,13 @@ const network_node_list = {
       'name': 'karura (via RadiumBlock)',
       'ss58': 2,
       'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
-      'chainId': '',
+      'chainId': '597',
       'networkType': 'ethereum',
     }
   ]
+};
+
+const substrate_node_list = {
+  network_acala: "wss://acala-dev.aca-dev.network/rpc/ws",
+  network_karura: "wss://karura-dev.aca-dev.network/rpc/ws"
 };

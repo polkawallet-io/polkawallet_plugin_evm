@@ -44,6 +44,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   List<TokenBalanceData> _seachBalance = [];
 
   bool hasFocus = false;
+  bool isSeach = false;
 
   // int _assetsTypeIndex = 0;
 
@@ -103,7 +104,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       } else {
         widget.plugin.noneNativeTokensAll.forEach((token) {
           defaultVisibleMap[token.id!] =
-              widget.plugin.store!.assets.customAssets[token.id!]!;
+              widget.plugin.store!.assets.customAssets[token.id!] ?? false;
         });
       }
 
@@ -166,12 +167,121 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     });
   }
 
+  Widget buildSeach() {
+    final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
+    final List<TokenBalanceData> list = [];
+    if (_filterCtrl.text.trim().isNotEmpty) {
+      list.add(TokenBalanceData(
+          amount: widget.plugin.balances.native?.freeBalance?.toString() ?? "",
+          decimals: 18,
+          id: widget.plugin.nativeToken.toUpperCase(),
+          symbol: widget.plugin.nativeToken.toUpperCase(),
+          name: widget.plugin.nativeToken.toUpperCase(),
+          fullName: '${widget.plugin.basic.name} ${dic['manage.native']}'));
+      list.addAll(widget.plugin.noneNativeTokensAll);
+
+      list.retainWhere((token) =>
+          token.symbol!.toUpperCase().contains(_filter) ||
+          (token.name ?? '').toUpperCase().contains(_filter) ||
+          (token.id ?? '').toUpperCase().contains(_filter));
+
+      _seachBalance.forEach((e) {
+        if (list.indexWhere((element) => element.id == e.id) < 0) {
+          list.add(e);
+        }
+      });
+    }
+    return Container(
+        color: UI.isDarkTheme(context) ? Color(0xFF3D3D3D) : Colors.transparent,
+        child: ListView.builder(
+          physics: BouncingScrollPhysics(),
+          padding: EdgeInsets.only(bottom: 16),
+          itemCount: list.length,
+          itemBuilder: (_, i) {
+            final isImport = widget.plugin.noneNativeTokensAll
+                    .indexWhere((element) => element.id == list[i].id) >=
+                0;
+            return Column(
+              children: [
+                Container(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    dense: list[i].fullName != null,
+                    leading: TokenIcon(
+                      list[i].id!,
+                      widget.plugin.tokenIcons,
+                      symbol: list[i].id,
+                    ),
+                    title: Text(list[i].name!,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headline4
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: list[i].fullName != null
+                        ? Text('${list[i].fullName}',
+                            maxLines: 2,
+                            style: TextStyle(
+                                fontSize: UI.getTextSize(10, context),
+                                fontWeight: FontWeight.w300,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .headline1
+                                    ?.color,
+                                fontFamily:
+                                    UI.getFontFamily('SF_Pro', context)))
+                        : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                            padding: EdgeInsets.only(right: 18.w),
+                            child: Text(
+                              Fmt.priceFloorBigInt(
+                                  Fmt.balanceInt(list[i].amount),
+                                  list[i].decimals!,
+                                  lengthMax: 4),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.6),
+                            )),
+                        Image.asset(
+                          "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
+                          fit: BoxFit.contain,
+                          width: 16.w,
+                        )
+                      ],
+                    ),
+                    onTap: () {
+                      if (list[i].id != widget.plugin.nativeToken) {
+                        if (!isImport) {
+                          final args =
+                              ModalRoute.of(context)!.settings.arguments as Map;
+                          final current = args['current'] as KeyPairData;
+                          //add to noneNativeTokensAll
+                          widget.plugin.store!.assets.setTokenBalanceMap(
+                              widget.plugin.noneNativeTokensAll..add(list[i]),
+                              current.address);
+                        }
+                        setState(() {
+                          _tokenVisible[list[i].id!] =
+                              !(_tokenVisible[list[i].id] ?? false);
+                        });
+                      }
+                    },
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                )
+              ],
+            );
+          },
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
-
-    final args = ModalRoute.of(context)!.settings.arguments as Map;
-    widget.plugin.store!.assets.loadCache(args['current'] as KeyPairData);
 
     // final isStateMint =
     //     widget.service.plugin.basic.name == para_chain_name_statemine ||
@@ -188,405 +298,342 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     ];
     list.addAll(widget.plugin.noneNativeTokensAll);
 
-    list.retainWhere((token) =>
-        token.symbol!.toUpperCase().contains(_filter) ||
-        (token.name ?? '').toUpperCase().contains(_filter) ||
-        (token.id ?? '').toUpperCase().contains(_filter));
+    // list.retainWhere((token) =>
+    //     token.symbol!.toUpperCase().contains(_filter) ||
+    //     (token.name ?? '').toUpperCase().contains(_filter) ||
+    //     (token.id ?? '').toUpperCase().contains(_filter));
 
     if (_hide0) {
       list.removeWhere((token) => Fmt.balanceInt(token.amount) == BigInt.zero);
     }
 
-    if (hasFocus) {
-      _seachBalance.forEach((e) {
-        if (list.indexWhere((element) => element.id == e.id) < 0) {
-          list.add(e);
-        }
-      });
-    }
+    // if (hasFocus) {
+    //   _seachBalance.forEach((e) {
+    //     if (list.indexWhere((element) => element.id == e.id) < 0) {
+    //       list.add(e);
+    //     }
+    //   });
+    // }
 
-    return Scaffold(
-      appBar: AppBar(
-          title: Text(dic['manage']!),
-          centerTitle: true,
-          elevation: 1.5,
-          actions: [
-            GestureDetector(
-                onTap: _onSave,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(15.h, 0, 15.h, 4),
-                  margin: EdgeInsets.only(right: 14.w),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    image: DecorationImage(
-                        image: AssetImage("assets/images/icon_bg.png"),
-                        fit: BoxFit.contain),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    dic['manage.save']!,
-                    style: TextStyle(
-                      color: UI.isDarkTheme(context)
-                          ? Theme.of(context).textTheme.headline5?.color
-                          : Theme.of(context).cardColor,
-                      fontSize: UI.getTextSize(12, context),
-                      fontFamily: UI.getFontFamily('TitilliumWeb', context),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ))
-          ],
-          leading: BackBtn()),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-                margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-                child: Focus(
-                    onFocusChange: (hasFocus) async {
-                      setState(() {
-                        this.hasFocus = hasFocus;
-                      });
-                    },
-                    child: v3.TextInputWidget(
-                      decoration: v3.InputDecorationV3(
-                        contentPadding: EdgeInsets.zero,
-                        hintText: dic['manage.filter'],
-                        hintStyle: Theme.of(context).textTheme.headline4,
-                        icon: _isLoading
-                            ? Container(
-                                margin: const EdgeInsets.only(left: 4),
-                                width: 14,
-                                height: 14,
-                                child: const RiveAnimation.asset(
-                                  'assets/images/loading.riv',
-                                  fit: BoxFit.none,
-                                ),
-                              )
-                            : Icon(
-                                Icons.search,
-                                color: Theme.of(context).disabledColor,
-                                size: 20,
-                              ),
+    return WillPopScope(
+        onWillPop: () {
+          if (isSeach) {
+            setState(() {
+              isSeach = false;
+              _filterCtrl.text = "";
+              _seachBalance = [];
+              _filter = "";
+            });
+            FocusScope.of(context).requestFocus(FocusNode());
+            return Future.value(false);
+          } else {
+            return Future.value(true);
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+              title: Text(dic['manage']!),
+              centerTitle: true,
+              elevation: 1.5,
+              actions: [
+                GestureDetector(
+                    onTap: _onSave,
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(15.h, 0, 15.h, 4),
+                      margin: EdgeInsets.only(right: 14.w),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        image: DecorationImage(
+                            image: AssetImage("assets/images/icon_bg.png"),
+                            fit: BoxFit.contain),
                       ),
-                      controller: _filterCtrl,
-                      style: Theme.of(context).textTheme.headline4,
-                      onChanged: _onInputChange,
-                    ))),
-            Expanded(
-                child: hasFocus
-                    ? Container(
-                        child: Container(
-                            color: UI.isDarkTheme(context)
-                                ? Color(0xFF3D3D3D)
-                                : Colors.transparent,
-                            child: ListView.builder(
-                              physics: BouncingScrollPhysics(),
-                              padding: EdgeInsets.only(bottom: 16),
-                              itemCount: list.length,
-                              itemBuilder: (_, i) {
-                                final isImport = widget
-                                        .plugin.noneNativeTokensAll
-                                        .indexWhere((element) =>
-                                            element.id == list[i].id) >=
-                                    0;
-                                return Column(
-                                  children: [
-                                    Container(
-                                      color: Colors.transparent,
-                                      child: ListTile(
-                                        dense: list[i].fullName != null,
-                                        leading: TokenIcon(
-                                          list[i].id!,
-                                          widget.plugin.tokenIcons,
-                                          symbol: list[i].id,
-                                        ),
-                                        title: Text(list[i].name!,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline4
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w600)),
-                                        subtitle: list[i].fullName != null
-                                            ? Text('${list[i].fullName}',
-                                                maxLines: 2,
-                                                style: TextStyle(
-                                                    fontSize: UI.getTextSize(
-                                                        10, context),
-                                                    fontWeight: FontWeight.w300,
-                                                    color: Theme.of(context)
-                                                        .textTheme
-                                                        .headline1
-                                                        ?.color,
-                                                    fontFamily:
-                                                        UI.getFontFamily(
-                                                            'SF_Pro', context)))
-                                            : null,
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Padding(
-                                                padding: EdgeInsets.only(
-                                                    right: 18.w),
-                                                child: Text(
-                                                  Fmt.priceFloorBigInt(
-                                                      Fmt.balanceInt(
-                                                          list[i].amount),
-                                                      list[i].decimals!,
-                                                      lengthMax: 4),
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      letterSpacing: -0.6),
-                                                )),
-                                            Image.asset(
-                                              "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
-                                              fit: BoxFit.contain,
-                                              width: 16.w,
-                                            )
-                                          ],
-                                        ),
-                                        onTap: () {
-                                          if (list[i].id !=
-                                              widget.plugin.nativeToken) {
-                                            if (!isImport) {
-                                              final args =
-                                                  ModalRoute.of(context)!
-                                                      .settings
-                                                      .arguments as Map;
-                                              final current = args['current']
-                                                  as KeyPairData;
-                                              //add to noneNativeTokensAll
-                                              widget.plugin.store!.assets
-                                                  .setTokenBalanceMap(
-                                                      widget.plugin
-                                                          .noneNativeTokensAll
-                                                        ..add(list[i]),
-                                                      current.address);
-                                            }
-                                            setState(() {
-                                              _tokenVisible[list[i].id!] =
-                                                  !(_tokenVisible[list[i].id] ??
-                                                      false);
-                                            });
-                                          }
-                                        },
-                                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        dic['manage.save']!,
+                        style: TextStyle(
+                          color: UI.isDarkTheme(context)
+                              ? Theme.of(context).textTheme.headline5?.color
+                              : Theme.of(context).cardColor,
+                          fontSize: UI.getTextSize(12, context),
+                          fontFamily: UI.getFontFamily('TitilliumWeb', context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ))
+              ],
+              leading: BackBtn(
+                onBack: () {
+                  if (isSeach) {
+                    setState(() {
+                      isSeach = false;
+                      _filterCtrl.text = "";
+                      _seachBalance = [];
+                      _filter = "";
+                    });
+                    FocusScope.of(context).requestFocus(FocusNode());
+                  } else {
+                    Navigator.of(context).pop();
+                  }
+                },
+              )),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                    margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
+                    child: Focus(
+                        onFocusChange: (hasFocus) async {
+                          setState(() {
+                            this.hasFocus = hasFocus;
+                            isSeach = hasFocus;
+                            if (!isSeach) {
+                              _filterCtrl.text = "";
+                              _seachBalance = [];
+                              _filter = "";
+                            }
+                          });
+                        },
+                        child: v3.TextInputWidget(
+                          decoration: v3.InputDecorationV3(
+                            contentPadding: EdgeInsets.zero,
+                            hintText: dic['manage.filter'],
+                            hintStyle: Theme.of(context).textTheme.headline4,
+                            icon: _isLoading
+                                ? Container(
+                                    margin: const EdgeInsets.only(left: 4),
+                                    width: 14,
+                                    height: 14,
+                                    child: const RiveAnimation.asset(
+                                      'assets/images/loading.riv',
+                                      fit: BoxFit.none,
                                     ),
-                                    Divider(
-                                      height: 1,
-                                    )
-                                  ],
-                                );
-                              },
-                            )),
-                      )
-                    : Column(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                GestureDetector(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: _hide0
-                                            ? Theme.of(context)
-                                                .toggleableActiveColor
-                                            : Theme.of(context).disabledColor,
-                                        size: 14,
-                                      ),
-                                      Container(
-                                        margin:
-                                            EdgeInsets.only(left: 4, right: 16),
-                                        child: Text(
-                                          dic['manage.hide']!,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline5
-                                              ?.copyWith(
-                                                  fontFamily: UI.getFontFamily(
-                                                      'SF_Pro', context),
-                                                  color: _hide0
-                                                      ? Theme.of(context)
-                                                          .toggleableActiveColor
-                                                      : Theme.of(context)
-                                                          .disabledColor),
-                                        ),
-                                      ),
-                                    ],
+                                  )
+                                : Icon(
+                                    Icons.search,
+                                    color: Theme.of(context).disabledColor,
+                                    size: 20,
                                   ),
-                                  onTap: () {
-                                    setState(() {
-                                      _hide0 = !_hide0;
-                                    });
-                                  },
-                                ),
-                                // Visibility(
-                                //     visible: widget.service.plugin.basic.name ==
-                                //             plugin_name_karura ||
-                                //         widget.service.plugin.basic.name == plugin_name_acala,
-                                //     child: GestureDetector(
-                                //       child: SvgPicture.asset(
-                                //         'assets/images/icon_screening.svg',
-                                //         color: Colors.white,
-                                //         width: 22,
-                                //       ),
-                                //       onTap: () {
-                                //         final dic = I18n.of(context)
-                                //             .getDic(i18n_full_dic_ui, 'common');
-                                //         showCupertinoModalPopup(
-                                //           context: context,
-                                //           builder: (context) {
-                                //             return PolkawalletActionSheet(
-                                //               actions: <Widget>[
-                                //                 ...assetsType.map((element) {
-                                //                   final index = assetsType.indexOf(element);
-                                //                   return PolkawalletActionSheetAction(
-                                //                     isDefaultAction:
-                                //                         index == _assetsTypeIndex,
-                                //                     onPressed: () {
-                                //                       if (index != _assetsTypeIndex) {
-                                //                         setState(() {
-                                //                           _assetsTypeIndex = index;
-                                //                         });
-                                //                       }
-                                //                       Navigator.pop(context);
-                                //                     },
-                                //                     child: Text(element),
-                                //                   );
-                                //                 }).toList()
-                                //               ],
-                                //               cancelButton: PolkawalletActionSheetAction(
-                                //                 onPressed: () {
-                                //                   Navigator.pop(context);
-                                //                 },
-                                //                 child: Text(dic['cancel']),
-                                //               ),
-                                //             );
-                                //           },
-                                //         );
-                                //       },
-                                //     ))
-                              ],
-                            ),
                           ),
-                          Expanded(
-                            child: _tokenVisible.keys.length == 0
-                                ? Center(
-                                    child: CupertinoActivityIndicator(
-                                        color: const Color(0xFF3C3C44)))
-                                : Container(
-                                    color: UI.isDarkTheme(context)
-                                        ? Color(0xFF3D3D3D)
-                                        : Colors.transparent,
-                                    child: ListView.builder(
-                                      physics: BouncingScrollPhysics(),
-                                      padding: EdgeInsets.only(bottom: 16),
-                                      itemCount: list.length,
-                                      itemBuilder: (_, i) {
-                                        return Column(
-                                          children: [
-                                            Container(
-                                              color: Colors.transparent,
-                                              child: ListTile(
-                                                dense: list[i].fullName != null,
-                                                leading: TokenIcon(
-                                                  list[i].id!,
-                                                  widget.plugin.tokenIcons,
-                                                  symbol: list[i].id,
-                                                ),
-                                                title: Text(list[i].name!,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .headline4
-                                                        ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600)),
-                                                subtitle: list[i].fullName !=
-                                                        null
-                                                    ? Text(
-                                                        '${list[i].fullName}',
-                                                        maxLines: 2,
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                UI.getTextSize(
-                                                                    10,
-                                                                    context),
-                                                            fontWeight:
-                                                                FontWeight.w300,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .headline1
-                                                                ?.color,
-                                                            fontFamily: UI
-                                                                .getFontFamily(
-                                                                    'SF_Pro',
-                                                                    context)))
-                                                    : null,
-                                                trailing: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                right: 18.w),
-                                                        child: Text(
-                                                          Fmt.priceFloorBigInt(
-                                                              Fmt.balanceInt(
-                                                                  list[i]
-                                                                      .amount),
-                                                              list[i].decimals!,
-                                                              lengthMax: 4),
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              letterSpacing:
-                                                                  -0.6),
-                                                        )),
-                                                    Image.asset(
-                                                      "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
-                                                      fit: BoxFit.contain,
-                                                      width: 16.w,
-                                                    )
-                                                  ],
-                                                ),
-                                                onTap: () {
-                                                  if (list[i].id !=
-                                                      widget
-                                                          .plugin.nativeToken) {
-                                                    setState(() {
-                                                      _tokenVisible[
-                                                              list[i].id!] =
-                                                          !(_tokenVisible[
-                                                                  list[i].id] ??
-                                                              false);
-                                                    });
-                                                  }
-                                                },
-                                              ),
+                          controller: _filterCtrl,
+                          style: Theme.of(context).textTheme.headline4,
+                          onChanged: _onInputChange,
+                        ))),
+                Expanded(
+                    child: isSeach
+                        ? buildSeach()
+                        : Column(
+                            children: [
+                              Container(
+                                margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    GestureDetector(
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: _hide0
+                                                ? Theme.of(context)
+                                                    .toggleableActiveColor
+                                                : Theme.of(context)
+                                                    .disabledColor,
+                                            size: 14,
+                                          ),
+                                          Container(
+                                            margin: EdgeInsets.only(
+                                                left: 4, right: 16),
+                                            child: Text(
+                                              dic['manage.hide']!,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headline5
+                                                  ?.copyWith(
+                                                      fontFamily:
+                                                          UI.getFontFamily(
+                                                              'SF_Pro',
+                                                              context),
+                                                      color: _hide0
+                                                          ? Theme.of(context)
+                                                              .toggleableActiveColor
+                                                          : Theme.of(context)
+                                                              .disabledColor),
                                             ),
-                                            Divider(
-                                              height: 1,
-                                            )
-                                          ],
-                                        );
+                                          ),
+                                        ],
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          _hide0 = !_hide0;
+                                        });
                                       },
-                                    )),
-                          ),
-                        ],
-                      )),
-          ],
-        ),
-      ),
-    );
+                                    ),
+                                    // Visibility(
+                                    //     visible: widget.service.plugin.basic.name ==
+                                    //             plugin_name_karura ||
+                                    //         widget.service.plugin.basic.name == plugin_name_acala,
+                                    //     child: GestureDetector(
+                                    //       child: SvgPicture.asset(
+                                    //         'assets/images/icon_screening.svg',
+                                    //         color: Colors.white,
+                                    //         width: 22,
+                                    //       ),
+                                    //       onTap: () {
+                                    //         final dic = I18n.of(context)
+                                    //             .getDic(i18n_full_dic_ui, 'common');
+                                    //         showCupertinoModalPopup(
+                                    //           context: context,
+                                    //           builder: (context) {
+                                    //             return PolkawalletActionSheet(
+                                    //               actions: <Widget>[
+                                    //                 ...assetsType.map((element) {
+                                    //                   final index = assetsType.indexOf(element);
+                                    //                   return PolkawalletActionSheetAction(
+                                    //                     isDefaultAction:
+                                    //                         index == _assetsTypeIndex,
+                                    //                     onPressed: () {
+                                    //                       if (index != _assetsTypeIndex) {
+                                    //                         setState(() {
+                                    //                           _assetsTypeIndex = index;
+                                    //                         });
+                                    //                       }
+                                    //                       Navigator.pop(context);
+                                    //                     },
+                                    //                     child: Text(element),
+                                    //                   );
+                                    //                 }).toList()
+                                    //               ],
+                                    //               cancelButton: PolkawalletActionSheetAction(
+                                    //                 onPressed: () {
+                                    //                   Navigator.pop(context);
+                                    //                 },
+                                    //                 child: Text(dic['cancel']),
+                                    //               ),
+                                    //             );
+                                    //           },
+                                    //         );
+                                    //       },
+                                    //     ))
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: _tokenVisible.keys.length == 0
+                                    ? Center(
+                                        child: CupertinoActivityIndicator(
+                                            color: const Color(0xFF3C3C44)))
+                                    : Container(
+                                        color: UI.isDarkTheme(context)
+                                            ? Color(0xFF3D3D3D)
+                                            : Colors.transparent,
+                                        child: ListView.builder(
+                                          physics: BouncingScrollPhysics(),
+                                          padding: EdgeInsets.only(bottom: 16),
+                                          itemCount: list.length,
+                                          itemBuilder: (_, i) {
+                                            return Column(
+                                              children: [
+                                                Container(
+                                                  color: Colors.transparent,
+                                                  child: ListTile(
+                                                    dense: list[i].fullName !=
+                                                        null,
+                                                    leading: TokenIcon(
+                                                      list[i].id!,
+                                                      widget.plugin.tokenIcons,
+                                                      symbol: list[i].id,
+                                                    ),
+                                                    title: Text(list[i].name!,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .headline4
+                                                            ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600)),
+                                                    subtitle: list[i].fullName !=
+                                                            null
+                                                        ? Text(
+                                                            '${list[i].fullName}',
+                                                            maxLines: 2,
+                                                            style: TextStyle(
+                                                                fontSize: UI
+                                                                    .getTextSize(
+                                                                        10, context),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w300,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .headline1
+                                                                    ?.color,
+                                                                fontFamily: UI
+                                                                    .getFontFamily(
+                                                                        'SF_Pro',
+                                                                        context)))
+                                                        : null,
+                                                    trailing: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Padding(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    right:
+                                                                        18.w),
+                                                            child: Text(
+                                                              Fmt.priceFloorBigInt(
+                                                                  Fmt.balanceInt(
+                                                                      list[i]
+                                                                          .amount),
+                                                                  list[i]
+                                                                      .decimals!,
+                                                                  lengthMax: 4),
+                                                              style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  letterSpacing:
+                                                                      -0.6),
+                                                            )),
+                                                        Image.asset(
+                                                          "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
+                                                          fit: BoxFit.contain,
+                                                          width: 16.w,
+                                                        )
+                                                      ],
+                                                    ),
+                                                    onTap: () {
+                                                      if (list[i].id !=
+                                                          widget.plugin
+                                                              .nativeToken) {
+                                                        setState(() {
+                                                          _tokenVisible[
+                                                                  list[i].id!] =
+                                                              !(_tokenVisible[
+                                                                      list[i]
+                                                                          .id] ??
+                                                                  false);
+                                                        });
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
+                                                Divider(
+                                                  height: 1,
+                                                )
+                                              ],
+                                            );
+                                          },
+                                        )),
+                              ),
+                            ],
+                          )),
+              ],
+            ),
+          ),
+        ));
   }
 }

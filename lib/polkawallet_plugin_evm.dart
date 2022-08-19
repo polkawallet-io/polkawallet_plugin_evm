@@ -152,6 +152,7 @@ class PluginEvm extends PolkawalletPlugin {
     connected = true;
     if (keyring.current.address != null) {
       updateBalance(keyring.current.toKeyPairData());
+      _getSubstrateAccount(keyring.current.toKeyPairData());
     }
   }
 
@@ -161,7 +162,33 @@ class PluginEvm extends PolkawalletPlugin {
 
     if (connected) {
       updateBalance(acc);
+      _getSubstrateAccount(acc);
     }
+  }
+
+  Future<void> _getSubstrateAccount(KeyPairData acc) async {
+    await sdk.api.bridge.init();
+    await sdk.api.bridge.connectFromChains([
+      network
+    ], nodeList: {
+      network: [substrate_node_list[network]!]
+    });
+
+    final data = await sdk.api.bridge.service.evalJavascript(
+        'bridge.getApi("${network.toLowerCase()}").query.evmAccounts.accounts("${acc.address}")');
+    if (data != null) {
+      try {
+        final publicKeys = await sdk.api.account.decodeAddress([data]);
+        store!.account.substratePubKey = publicKeys?.values.first;
+      } catch (_) {
+        store!.account.substratePubKey = "";
+      }
+    } else {
+      store!.account.substratePubKey = "";
+    }
+
+    sdk.api.bridge.disconnectFromChains();
+    sdk.api.bridge.dispose();
   }
 
   Future<void> updateBalance(KeyPairData acc) async {
