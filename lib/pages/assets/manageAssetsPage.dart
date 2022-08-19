@@ -52,7 +52,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     if (_hide0) {
       widget.plugin.noneNativeTokensAll.forEach((e) {
         if (Fmt.balanceInt(e.amount) == BigInt.zero) {
-          config[e.symbol!] = false;
+          config[e.id!] = false;
         }
       });
     }
@@ -90,20 +90,20 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       final Map<String, bool> defaultVisibleMap = {nativeToken: true};
 
       if (widget.plugin.store!.assets.customAssets.keys.length == 0) {
-        final defaultList = widget.plugin.defaultTokens.toList();
-        defaultList.forEach((token) {
-          defaultVisibleMap[token] = true;
-        });
+        // final defaultList = widget.plugin.defaultTokens.toList();
+        // defaultList.forEach((token) {
+        //   defaultVisibleMap[token] = true;
+        // });
 
         widget.plugin.noneNativeTokensAll.forEach((token) {
-          if (defaultVisibleMap[token.symbol] == null) {
-            defaultVisibleMap[token.symbol!] = false;
+          if (defaultVisibleMap[token.id] == null) {
+            defaultVisibleMap[token.id!] = false;
           }
         });
       } else {
         widget.plugin.noneNativeTokensAll.forEach((token) {
-          defaultVisibleMap[token.symbol!] =
-              widget.plugin.store!.assets.customAssets[token.symbol!]!;
+          defaultVisibleMap[token.id!] =
+              widget.plugin.store!.assets.customAssets[token.id!]!;
         });
       }
 
@@ -140,21 +140,12 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           final tokenBalance = await widget.plugin.sdk.api.eth.account
               .getTokenBalance(
                   (args['current'] as KeyPairData).address!, [input.trim()]);
-          _seachBalance = (tokenBalance ?? [])
-              .map((e) => TokenBalanceData(
-                  id: e['contractAddress'],
-                  symbol: e['symbol'],
-                  name: e['symbol'].toString().toUpperCase(),
-                  fullName: e['name'],
-                  decimals: e['decimals'],
-                  amount: e['amount']))
-              .toList();
           setState(() {
             _isLoading = false;
             _seachBalance = (tokenBalance ?? [])
                 .map((e) => TokenBalanceData(
                     id: e['contractAddress'],
-                    tokenNameId: e['symbol'],
+                    tokenNameId: e['contractAddress'],
                     symbol: e['symbol'],
                     name: e['symbol'].toString().toUpperCase(),
                     fullName: e['name'],
@@ -306,9 +297,9 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                       child: ListTile(
                                         dense: list[i].fullName != null,
                                         leading: TokenIcon(
-                                          list[i].symbol!,
+                                          list[i].id!,
                                           widget.plugin.tokenIcons,
-                                          symbol: list[i].symbol,
+                                          symbol: list[i].id,
                                         ),
                                         title: Text(list[i].name!,
                                             style: Theme.of(context)
@@ -350,14 +341,14 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                                       letterSpacing: -0.6),
                                                 )),
                                             Image.asset(
-                                              "assets/images/${(_tokenVisible[list[i].symbol] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
+                                              "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
                                               fit: BoxFit.contain,
                                               width: 16.w,
                                             )
                                           ],
                                         ),
                                         onTap: () {
-                                          if (list[i].symbol !=
+                                          if (list[i].id !=
                                               widget.plugin.nativeToken) {
                                             if (!isImport) {
                                               final args =
@@ -375,9 +366,8 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                                       current.address);
                                             }
                                             setState(() {
-                                              _tokenVisible[list[i].symbol!] =
-                                                  !(_tokenVisible[
-                                                          list[i].symbol] ??
+                                              _tokenVisible[list[i].id!] =
+                                                  !(_tokenVisible[list[i].id] ??
                                                       false);
                                             });
                                           }
@@ -506,9 +496,9 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                               child: ListTile(
                                                 dense: list[i].fullName != null,
                                                 leading: TokenIcon(
-                                                  list[i].symbol!,
+                                                  list[i].id!,
                                                   widget.plugin.tokenIcons,
-                                                  symbol: list[i].symbol,
+                                                  symbol: list[i].id,
                                                 ),
                                                 title: Text(list[i].name!,
                                                     style: Theme.of(context)
@@ -563,22 +553,21 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                                                   -0.6),
                                                         )),
                                                     Image.asset(
-                                                      "assets/images/${(_tokenVisible[list[i].symbol] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
+                                                      "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
                                                       fit: BoxFit.contain,
                                                       width: 16.w,
                                                     )
                                                   ],
                                                 ),
                                                 onTap: () {
-                                                  if (list[i].symbol !=
+                                                  if (list[i].id !=
                                                       widget
                                                           .plugin.nativeToken) {
                                                     setState(() {
                                                       _tokenVisible[
-                                                              list[i].symbol!] =
-                                                          !(_tokenVisible[list[
-                                                                      i]
-                                                                  .symbol] ??
+                                                              list[i].id!] =
+                                                          !(_tokenVisible[
+                                                                  list[i].id] ??
                                                               false);
                                                     });
                                                   }

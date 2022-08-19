@@ -3,6 +3,7 @@ library polkawallet_plugin_evm;
 import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
+import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
 import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
 import 'package:polkawallet_sdk/api/types/networkParams.dart';
@@ -12,6 +13,9 @@ import 'package:polkawallet_sdk/storage/keyring.dart';
 import 'package:polkawallet_sdk/storage/keyringEVM.dart';
 import 'package:polkawallet_sdk/plugin/store/balances.dart';
 import 'package:get_storage/src/storage_impl.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:polkawallet_ui/components/v3/plugin/pluginLoadingWidget.dart';
+import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 
 class PluginEvm extends PolkawalletPlugin {
   PluginEvm({networkName = network_acala})
@@ -117,6 +121,7 @@ class PluginEvm extends PolkawalletPlugin {
 
   PluginStore? _store;
   PluginStore? get store => _store;
+  bool connected = false;
 
   @override
   Future<void> onWillStartEVM(KeyringEVM keyring) async {
@@ -128,7 +133,8 @@ class PluginEvm extends PolkawalletPlugin {
     _store = PluginStore(this);
     _store!.init();
 
-    store!.assets.loadCache(keyring.current.toKeyPairData());
+    _loadAccoundData(keyring.current.toKeyPairData());
+    await _loadWallet();
     // _service = PluginService(this, keyring);
 
     // _loadCacheData(keyring.current);
@@ -143,10 +149,65 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   Future<void> onStartedEVM(KeyringEVM keyring) async {
-    // _service!.connected = true;
+    connected = true;
     if (keyring.current.address != null) {
-      // await _store?.swap.initDexTokens(this);
-      // _subscribeTokenBalances(keyring.current);
+      updateBalance(keyring.current.toKeyPairData());
+    }
+  }
+
+  @override
+  Future<void> onAccountChanged(KeyPairData acc) async {
+    _loadAccoundData(acc);
+
+    if (connected) {
+      updateBalance(acc);
+    }
+  }
+
+  Future<void> updateBalance(KeyPairData acc) async {
+    final tokenBalance = await sdk.api.eth.account.getTokenBalance(
+        acc.address!, noneNativeTokensAll.map((e) => e.id!).toList());
+    store!.assets.setTokenBalanceMap(
+        List<TokenBalanceData>.from(tokenBalance!.map((e) => TokenBalanceData(
+              id: e['contractAddress'],
+              tokenNameId: e['contractAddress'],
+              symbol: e['symbol'],
+              name: e['symbol'].toString().toUpperCase(),
+              fullName: e['name'],
+              decimals: e['decimals'],
+              amount: e['amount'],
+            ))),
+        acc.address);
+    balances.isTokensFromCache = false;
+  }
+
+  void _loadAccoundData(KeyPairData acc) {
+    store!.assets.loadCache(acc);
+    balances.isTokensFromCache = true;
+  }
+
+  Future<void> _loadWallet() async {
+    final data = await WalletApi.getTokenIcons();
+    if (data != null) {
+      tokenIcons.addAll(data.map((k, v) {
+        return MapEntry(
+            (k as String).toUpperCase(),
+            (v as String).contains('.svg')
+                ? SvgPicture.network(
+                    v,
+                    placeholderBuilder: (context) =>
+                        const PluginLoadingWidget(),
+                  )
+                : Image.network(
+                    v,
+                    loadingBuilder: (context, child, loadingProgress) =>
+                        loadingProgress == null
+                            ? child
+                            : const PluginLoadingWidget(),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.image_not_supported),
+                  ));
+      }));
     }
   }
 }
