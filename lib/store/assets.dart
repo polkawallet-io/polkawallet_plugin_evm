@@ -18,6 +18,7 @@ abstract class _AssetsStore with Store {
   final StoreCache? cache;
 
   final String customAssetsStoreKey = 'assets_list';
+  final String balanceKey = 'balance_key';
 
   @observable
   Map<String, bool> customAssets = {};
@@ -28,9 +29,9 @@ abstract class _AssetsStore with Store {
 
   @action
   void setTokenBalanceMap(List<TokenBalanceData> list, String? address,
-      {bool shouldCache = true}) {
+      {bool shouldCache = true}) async {
     final data = Map<String?, TokenBalanceData>();
-    final dataForCache = {};
+    final Map<dynamic, Map> dataForCache = {};
     list.forEach((e) {
       if (e.tokenNameId == null) return;
 
@@ -54,9 +55,14 @@ abstract class _AssetsStore with Store {
     tokenBalanceMap = data;
 
     if (shouldCache) {
-      final cached = cache!.tokens.val;
-      cached[address] = dataForCache;
-      cache!.tokens.val = cached;
+      cache!.tokens.val = dataForCache;
+      final data =
+          dataForCache.map((key, value) => MapEntry(key, value["amount"]));
+      // balance amount
+      final cachedAssetsList =
+          (await cache!.storage().read('$balanceKey')) ?? {};
+      cachedAssetsList[address] = data;
+      cache!.storage().write('$balanceKey', cachedAssetsList);
     }
   }
 
@@ -89,9 +95,10 @@ abstract class _AssetsStore with Store {
     loadAccountCache(acc);
 
     final cachedTokens = cache!.tokens.val;
-    if (cachedTokens != null && cachedTokens[acc.address] != null) {
-      final tokens = cachedTokens[acc.address].values.toList();
+    if (cachedTokens != null) {
+      final tokens = cachedTokens.values.toList();
       tokens.retainWhere((e) => e['tokenNameId'] != null);
+      final cachedAssetsList = await cache!.storage().read('$balanceKey');
       setTokenBalanceMap(
           List<TokenBalanceData>.from(tokens.map((e) => TokenBalanceData(
               id: e['id'],
@@ -104,7 +111,10 @@ abstract class _AssetsStore with Store {
               fullName: e['fullName'],
               decimals: e['decimals'],
               minBalance: e['minBalance'],
-              amount: e['amount'],
+              amount: cachedAssetsList != null &&
+                      cachedAssetsList[acc.address] != null
+                  ? cachedAssetsList[acc.address][e['tokenNameId']]
+                  : e['amount'],
               detailPageRoute: e['detailPageRoute']))),
           acc.address,
           shouldCache: false);

@@ -127,24 +127,12 @@ class PluginEvm extends PolkawalletPlugin {
   Future<void> onWillStartEVM(KeyringEVM keyring) async {
     tokenIcons = _getTokenIcons();
 
-    // _api = AcalaApi(AcalaService(this));
-
     await GetStorage.init(this.basic.name ?? "plugin_evm");
     _store = PluginStore(this);
     _store!.init();
 
     _loadAccoundData(keyring.current.toKeyPairData());
     await _loadWallet();
-    // _service = PluginService(this, keyring);
-
-    // _loadCacheData(keyring.current);
-
-    // // fetch tokens config here for subscribe all tokens balances
-    // _service!.fetchRemoteConfig();
-    // _service!.assets.queryIconsSrc();
-
-    // _service!.earn.getBlockDuration();
-    //
   }
 
   @override
