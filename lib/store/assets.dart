@@ -24,16 +24,15 @@ abstract class _AssetsStore with Store {
   Map<String, bool> customAssets = {};
 
   @observable
-  Map<String?, TokenBalanceData> tokenBalanceMap =
-      Map<String, TokenBalanceData>();
+  Map<String?, TokenBalanceData> tokenBalanceMap = <String, TokenBalanceData>{};
 
   @action
   Future<void> setTokenBalanceMap(List<TokenBalanceData> list, String? address,
       {bool shouldCache = true}) async {
-    final data = Map<String?, TokenBalanceData>();
+    final data = <String?, TokenBalanceData>{};
     final Map<dynamic, Map> dataForCache = {};
-    list.forEach((e) {
-      if (e.tokenNameId == null) return;
+    for (var e in list) {
+      if (e.tokenNameId == null) continue;
 
       data[e.tokenNameId] = e;
 
@@ -50,7 +49,7 @@ abstract class _AssetsStore with Store {
         'minBalance': e.minBalance,
         'detailPageRoute': e.detailPageRoute,
       };
-    });
+    }
     tokenBalanceMap = data;
 
     if (shouldCache) {
@@ -58,10 +57,9 @@ abstract class _AssetsStore with Store {
       final data =
           dataForCache.map((key, value) => MapEntry(key, value["amount"]));
       // balance amount
-      final cachedAssetsList =
-          (await cache!.storage().read('$balanceKey')) ?? {};
+      final cachedAssetsList = (await cache!.storage().read(balanceKey)) ?? {};
       cachedAssetsList[address] = data;
-      cache!.storage().write('$balanceKey', cachedAssetsList);
+      cache!.storage().write(balanceKey, cachedAssetsList);
     }
   }
 
@@ -80,12 +78,11 @@ abstract class _AssetsStore with Store {
       return;
     }
 
-    final cachedAssetsList =
-        await cache!.storage().read('$customAssetsStoreKey');
+    final cachedAssetsList = await cache!.storage().read(customAssetsStoreKey);
     if (cachedAssetsList != null && cachedAssetsList[acc.pubKey] != null) {
       customAssets = Map<String, bool>.from(cachedAssetsList[acc.pubKey]);
     } else {
-      customAssets = Map<String, bool>();
+      customAssets = <String, bool>{};
     }
   }
 
@@ -97,7 +94,7 @@ abstract class _AssetsStore with Store {
     if (cachedTokens != null) {
       final tokens = cachedTokens.values.toList();
       tokens.retainWhere((e) => e['tokenNameId'] != null);
-      final cachedAssetsList = await cache!.storage().read('$balanceKey');
+      final cachedAssetsList = await cache!.storage().read(balanceKey);
       setTokenBalanceMap(
           List<TokenBalanceData>.from(tokens.map((e) => TokenBalanceData(
               id: e['id'],
@@ -119,16 +116,16 @@ abstract class _AssetsStore with Store {
           acc.address,
           shouldCache: false);
     } else {
-      tokenBalanceMap = Map<String, TokenBalanceData>();
+      tokenBalanceMap = <String, TokenBalanceData>{};
     }
   }
 
   Future<void> _storeCustomAssets(
       KeyPairData acc, String pluginName, Map<String, bool> data) async {
     final cachedAssetsList =
-        (await cache!.storage().read('$customAssetsStoreKey')) ?? {};
+        (await cache!.storage().read(customAssetsStoreKey)) ?? {};
     cachedAssetsList[acc.pubKey] = data;
 
-    cache!.storage().write('$customAssetsStoreKey', cachedAssetsList);
+    cache!.storage().write(customAssetsStoreKey, cachedAssetsList);
   }
 }

@@ -27,8 +27,16 @@ mixin _$AccountStore on _AccountStore, Store {
   final _$setSubstrateAsyncAction = AsyncAction('_AccountStore.setSubstrate');
 
   @override
-  Future<void> setSubstrate(KeyPairData substrate) {
-    return _$setSubstrateAsyncAction.run(() => super.setSubstrate(substrate));
+  Future<void> setSubstrate(KeyPairData? substrate, KeyPairData? current) {
+    return _$setSubstrateAsyncAction
+        .run(() => super.setSubstrate(substrate, current));
+  }
+
+  final _$loadCacheAsyncAction = AsyncAction('_AccountStore.loadCache');
+
+  @override
+  Future<void> loadCache(KeyPairData acc) {
+    return _$loadCacheAsyncAction.run(() => super.loadCache(acc));
   }
 
   @override

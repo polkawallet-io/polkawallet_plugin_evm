@@ -14,11 +14,28 @@ abstract class _AccountStore with Store {
 
   final StoreCache? cache;
 
+  final String substrateKey = 'substrate_key';
+
   @observable
   KeyPairData? substrate;
 
   @action
-  Future<void> setSubstrate(KeyPairData substrate) async {
+  Future<void> setSubstrate(
+      KeyPairData? substrate, KeyPairData? current) async {
     this.substrate = substrate;
+    if (substrate != null) {
+      final cachedSubstrate = (await cache!.storage().read(substrateKey)) ?? {};
+      cachedSubstrate[current!.address] = substrate.toJson();
+      cache!.storage().write(substrateKey, cachedSubstrate);
+    }
+  }
+
+  @action
+  Future<void> loadCache(KeyPairData acc) async {
+    final cachedSubstrate = await cache!.storage().read(substrateKey);
+    print("loadCache====${cachedSubstrate}");
+    if (cachedSubstrate != null && cachedSubstrate[acc.address] != null) {
+      substrate = KeyPairData.fromJson(cachedSubstrate[acc.address]);
+    }
   }
 }

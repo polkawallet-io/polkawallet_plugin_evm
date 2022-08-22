@@ -150,6 +150,7 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   Future<void> onAccountChanged(KeyPairData acc) async {
     _loadAccoundData(acc);
+    store!.account.setSubstrate(null, acc);
 
     if (connected) {
       updateBalance(acc);
@@ -174,10 +175,12 @@ class PluginEvm extends PolkawalletPlugin {
         final address = await sdk.api.account.service
             .encodeAddress([publicKey!], [substrate_ss58_list[network]]);
         final icons = await sdk.api.account.service.getPubKeyIcons([publicKey]);
-        store!.account.setSubstrate(KeyPairData()
-          ..pubKey = publicKey
-          ..address = address!["${substrate_ss58_list[network]}"][publicKey]
-          ..icon = (icons!.last as List).last.toString());
+        store!.account.setSubstrate(
+            KeyPairData()
+              ..pubKey = publicKey
+              ..address = address!["${substrate_ss58_list[network]}"][publicKey]
+              ..icon = (icons!.last as List).last.toString(),
+            acc);
       } catch (_) {}
     }
 
@@ -204,6 +207,7 @@ class PluginEvm extends PolkawalletPlugin {
 
   void _loadAccoundData(KeyPairData acc) {
     store!.assets.loadCache(acc);
+    store!.account.loadCache(acc);
     balances.isTokensFromCache = true;
   }
 
