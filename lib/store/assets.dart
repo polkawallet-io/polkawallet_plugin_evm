@@ -28,7 +28,7 @@ abstract class _AssetsStore with Store {
       Map<String, TokenBalanceData>();
 
   @action
-  void setTokenBalanceMap(List<TokenBalanceData> list, String? address,
+  Future<void> setTokenBalanceMap(List<TokenBalanceData> list, String? address,
       {bool shouldCache = true}) async {
     final data = Map<String?, TokenBalanceData>();
     final Map<dynamic, Map> dataForCache = {};

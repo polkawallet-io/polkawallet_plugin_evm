@@ -1,5 +1,8 @@
 library polkawallet_plugin_evm;
 
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
@@ -166,13 +169,16 @@ class PluginEvm extends PolkawalletPlugin {
         'bridge.getApi("${network.toLowerCase()}").query.evmAccounts.accounts("${acc.address}")');
     if (data != null) {
       try {
-        final publicKeys = await sdk.api.account.decodeAddress([data]);
-        store!.account.substratePubKey = publicKeys?.keys.first;
-      } catch (_) {
-        store!.account.substratePubKey = "";
-      }
-    } else {
-      store!.account.substratePubKey = "";
+        final publicKey =
+            (await sdk.api.account.decodeAddress([data]))?.keys.first;
+        final address = await sdk.api.account.service
+            .encodeAddress([publicKey!], [substrate_ss58_list[network]]);
+        final icons = await sdk.api.account.service.getPubKeyIcons([publicKey]);
+        store!.account.setSubstrate(KeyPairData()
+          ..pubKey = publicKey
+          ..address = address!["${substrate_ss58_list[network]}"][publicKey]
+          ..icon = (icons!.last as List).last.toString());
+      } catch (_) {}
     }
 
     sdk.api.bridge.disconnectFromChains();

@@ -28,3 +28,5 @@ const substrate_node_list = {
   network_acala: "wss://acala-dev.aca-dev.network/rpc/ws",
   network_karura: "wss://karura-dev.aca-dev.network/rpc/ws"
 };
+
+const substrate_ss58_list = {network_acala: 10, network_karura: 8};

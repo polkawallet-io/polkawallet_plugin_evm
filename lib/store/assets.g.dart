@@ -39,6 +39,16 @@ mixin _$AssetsStore on _AssetsStore, Store {
     });
   }
 
+  final _$setTokenBalanceMapAsyncAction =
+      AsyncAction('_AssetsStore.setTokenBalanceMap');
+
+  @override
+  Future<void> setTokenBalanceMap(List<TokenBalanceData> list, String? address,
+      {bool shouldCache = true}) {
+    return _$setTokenBalanceMapAsyncAction.run(() =>
+        super.setTokenBalanceMap(list, address, shouldCache: shouldCache));
+  }
+
   final _$loadAccountCacheAsyncAction =
       AsyncAction('_AssetsStore.loadAccountCache');
 
@@ -55,18 +65,6 @@ mixin _$AssetsStore on _AssetsStore, Store {
   }
 
   final _$_AssetsStoreActionController = ActionController(name: '_AssetsStore');
-
-  @override
-  void setTokenBalanceMap(List<TokenBalanceData> list, String? address,
-      {bool shouldCache = true}) {
-    final _$actionInfo = _$_AssetsStoreActionController.startAction(
-        name: '_AssetsStore.setTokenBalanceMap');
-    try {
-      return super.setTokenBalanceMap(list, address, shouldCache: shouldCache);
-    } finally {
-      _$_AssetsStoreActionController.endAction(_$actionInfo);
-    }
-  }
 
   @override
   void setCustomAssets(

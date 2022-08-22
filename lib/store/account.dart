@@ -1,6 +1,7 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:mobx/mobx.dart';
 import 'package:polkawallet_plugin_evm/store/cache/storeCache.dart';
+import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 
 part 'account.g.dart';
 
@@ -14,5 +15,10 @@ abstract class _AccountStore with Store {
   final StoreCache? cache;
 
   @observable
-  String? substratePubKey;
+  KeyPairData? substrate;
+
+  @action
+  Future<void> setSubstrate(KeyPairData substrate) async {
+    this.substrate = substrate;
+  }
 }
