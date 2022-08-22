@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
 import 'package:polkawallet_plugin_evm/polkawallet_plugin_evm.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
 import 'package:polkawallet_plugin_evm/utils/i18n/index.dart';
@@ -58,9 +59,10 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       });
     }
 
-    final args = ModalRoute.of(context)!.settings.arguments as Map;
     widget.plugin.store?.assets.setCustomAssets(
-        args['current'] as KeyPairData, widget.plugin.basic.name!, config);
+        widget.plugin.service!.keyring.current.toKeyPairData(),
+        widget.plugin.basic.name!,
+        config);
 
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
     await showCupertinoDialog(
@@ -133,25 +135,26 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
         _delayTimer!.cancel();
       }
       _delayTimer = Timer(Duration(milliseconds: 500), () async {
-        final args = ModalRoute.of(context)!.settings.arguments as Map;
         try {
           setState(() {
             _isLoading = true;
           });
           final tokenBalance = await widget.plugin.sdk.api.eth.account
-              .getTokenBalance(
-                  (args['current'] as KeyPairData).address!, [input.trim()]);
+              .getTokenBalance(widget.plugin.service!.keyring.current.address!,
+                  [input.trim()]);
           setState(() {
             _isLoading = false;
             _seachBalance = (tokenBalance ?? [])
                 .map((e) => TokenBalanceData(
-                    id: e['contractAddress'],
-                    tokenNameId: e['contractAddress'],
-                    symbol: e['symbol'],
-                    name: e['symbol'].toString().toUpperCase(),
-                    fullName: e['name'],
-                    decimals: e['decimals'],
-                    amount: e['amount']))
+                      id: e['contractAddress'],
+                      tokenNameId: e['contractAddress'],
+                      symbol: e['symbol'],
+                      name: e['symbol'].toString().toUpperCase(),
+                      fullName: e['name'],
+                      decimals: e['decimals'],
+                      amount: e['amount'],
+                      detailPageRoute: TokenDetailPage.route,
+                    ))
                 .toList();
           });
         } catch (_) {
@@ -254,13 +257,10 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     onTap: () {
                       if (list[i].id != widget.plugin.nativeToken) {
                         if (!isImport) {
-                          final args =
-                              ModalRoute.of(context)!.settings.arguments as Map;
-                          final current = args['current'] as KeyPairData;
                           //add to noneNativeTokensAll
                           widget.plugin.store!.assets.setTokenBalanceMap(
                               widget.plugin.noneNativeTokensAll..add(list[i]),
-                              current.address);
+                              widget.plugin.service!.keyring.current.address);
                         }
                         setState(() {
                           _tokenVisible[list[i].id!] =

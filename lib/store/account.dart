@@ -33,7 +33,6 @@ abstract class _AccountStore with Store {
   @action
   Future<void> loadCache(KeyPairData acc) async {
     final cachedSubstrate = await cache!.storage().read(substrateKey);
-    print("loadCache====${cachedSubstrate}");
     if (cachedSubstrate != null && cachedSubstrate[acc.address] != null) {
       substrate = KeyPairData.fromJson(cachedSubstrate[acc.address]);
     }

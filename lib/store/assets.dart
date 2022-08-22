@@ -47,6 +47,7 @@ abstract class _AssetsStore with Store {
         'fullName': e.fullName,
         'decimals': e.decimals,
         'minBalance': e.minBalance,
+        'amount': e.amount,
         'detailPageRoute': e.detailPageRoute,
       };
     }

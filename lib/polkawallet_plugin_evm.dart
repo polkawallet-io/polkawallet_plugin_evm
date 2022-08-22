@@ -6,6 +6,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
+import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
+import 'package:polkawallet_plugin_evm/service/PluginService.dart';
 import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
 import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
@@ -73,6 +75,7 @@ class PluginEvm extends PolkawalletPlugin {
   Map<String, WidgetBuilder> getRoutes(Keyring keyring) {
     return {
       ManageAssetsPage.route: (_) => ManageAssetsPage(this),
+      TokenDetailPage.route: (_) => TokenDetailPage(this),
     };
   }
 
@@ -124,6 +127,8 @@ class PluginEvm extends PolkawalletPlugin {
 
   PluginStore? _store;
   PluginStore? get store => _store;
+  PluginService? _service;
+  PluginService? get service => _service;
   bool connected = false;
 
   @override
@@ -134,6 +139,8 @@ class PluginEvm extends PolkawalletPlugin {
     _store = PluginStore(this);
     _store!.init();
 
+    _service = PluginService(keyring);
+
     _loadAccoundData(keyring.current.toKeyPairData());
     await _loadWallet();
   }
@@ -142,7 +149,7 @@ class PluginEvm extends PolkawalletPlugin {
   Future<void> onStartedEVM(KeyringEVM keyring) async {
     connected = true;
     if (keyring.current.address != null) {
-      updateBalance(keyring.current.toKeyPairData());
+      updateBalanceNoneNativeTokensAll();
       _getSubstrateAccount(keyring.current.toKeyPairData());
     }
   }
@@ -153,7 +160,7 @@ class PluginEvm extends PolkawalletPlugin {
     store!.account.setSubstrate(null, acc);
 
     if (connected) {
-      updateBalance(acc);
+      updateBalanceNoneNativeTokensAll();
       _getSubstrateAccount(acc);
     }
   }
@@ -188,9 +195,30 @@ class PluginEvm extends PolkawalletPlugin {
     sdk.api.bridge.dispose();
   }
 
-  Future<void> updateBalance(KeyPairData acc) async {
+  Future<void> updateBalance(TokenBalanceData token) async {
+    final tokenBalance = await sdk.api.eth.account
+        .getTokenBalance(service!.keyring.current.address!, [token.id!]);
+    noneNativeTokensAll.removeWhere((element) => element.id == token.id);
+    final tokens = noneNativeTokensAll.toList()
+      ..addAll(
+          List<TokenBalanceData>.from(tokenBalance!.map((e) => TokenBalanceData(
+                id: e['contractAddress'],
+                tokenNameId: e['contractAddress'],
+                symbol: e['symbol'],
+                name: e['symbol'].toString().toUpperCase(),
+                fullName: e['name'],
+                decimals: e['decimals'],
+                amount: e['amount'],
+                detailPageRoute: TokenDetailPage.route,
+              ))));
+    store!.assets.setTokenBalanceMap(tokens, service!.keyring.current.address);
+    balances.isTokensFromCache = false;
+  }
+
+  Future<void> updateBalanceNoneNativeTokensAll() async {
     final tokenBalance = await sdk.api.eth.account.getTokenBalance(
-        acc.address!, noneNativeTokensAll.map((e) => e.id!).toList());
+        service!.keyring.current.address!,
+        noneNativeTokensAll.map((e) => e.id!).toList());
     store!.assets.setTokenBalanceMap(
         List<TokenBalanceData>.from(tokenBalance!.map((e) => TokenBalanceData(
               id: e['contractAddress'],
@@ -200,8 +228,9 @@ class PluginEvm extends PolkawalletPlugin {
               fullName: e['name'],
               decimals: e['decimals'],
               amount: e['amount'],
+              detailPageRoute: TokenDetailPage.route,
             ))),
-        acc.address);
+        service!.keyring.current.address);
     balances.isTokensFromCache = false;
   }
 
