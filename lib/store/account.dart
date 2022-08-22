@@ -19,6 +19,9 @@ abstract class _AccountStore with Store {
   @observable
   KeyPairData? substrate;
 
+  @observable
+  bool? querying;
+
   @action
   Future<void> setSubstrate(
       KeyPairData? substrate, KeyPairData? current) async {

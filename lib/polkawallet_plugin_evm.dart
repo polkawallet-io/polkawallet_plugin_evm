@@ -166,13 +166,13 @@ class PluginEvm extends PolkawalletPlugin {
   }
 
   Future<void> _getSubstrateAccount(KeyPairData acc) async {
+    store!.account.querying = true;
     await sdk.api.bridge.init();
     await sdk.api.bridge.connectFromChains([
       network
     ], nodeList: {
       network: [substrate_node_list[network]!]
     });
-
     final data = await sdk.api.bridge.service.evalJavascript(
         'bridge.getApi("${network.toLowerCase()}").query.evmAccounts.accounts("${acc.address}")');
     if (data != null) {
@@ -193,6 +193,7 @@ class PluginEvm extends PolkawalletPlugin {
 
     sdk.api.bridge.disconnectFromChains();
     sdk.api.bridge.dispose();
+    store!.account.querying = false;
   }
 
   Future<void> updateBalance(TokenBalanceData token) async {

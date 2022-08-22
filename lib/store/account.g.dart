@@ -24,6 +24,21 @@ mixin _$AccountStore on _AccountStore, Store {
     });
   }
 
+  final _$queryingAtom = Atom(name: '_AccountStore.querying');
+
+  @override
+  bool? get querying {
+    _$queryingAtom.reportRead();
+    return super.querying;
+  }
+
+  @override
+  set querying(bool? value) {
+    _$queryingAtom.reportWrite(value, super.querying, () {
+      super.querying = value;
+    });
+  }
+
   final _$setSubstrateAsyncAction = AsyncAction('_AccountStore.setSubstrate');
 
   @override
@@ -42,7 +57,8 @@ mixin _$AccountStore on _AccountStore, Store {
   @override
   String toString() {
     return '''
-substrate: ${substrate}
+substrate: ${substrate},
+querying: ${querying}
     ''';
   }
 }
