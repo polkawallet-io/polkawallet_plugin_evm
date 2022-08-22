@@ -48,7 +48,6 @@ abstract class _AssetsStore with Store {
         'fullName': e.fullName,
         'decimals': e.decimals,
         'minBalance': e.minBalance,
-        'amount': e.amount,
         'detailPageRoute': e.detailPageRoute,
       };
     });
@@ -112,9 +111,10 @@ abstract class _AssetsStore with Store {
               decimals: e['decimals'],
               minBalance: e['minBalance'],
               amount: cachedAssetsList != null &&
-                      cachedAssetsList[acc.address] != null
+                      cachedAssetsList[acc.address] != null &&
+                      cachedAssetsList[acc.address][e['tokenNameId']] != null
                   ? cachedAssetsList[acc.address][e['tokenNameId']]
-                  : e['amount'],
+                  : "0",
               detailPageRoute: e['detailPageRoute']))),
           acc.address,
           shouldCache: false);

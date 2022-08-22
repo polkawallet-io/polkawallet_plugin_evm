@@ -167,7 +167,7 @@ class PluginEvm extends PolkawalletPlugin {
     if (data != null) {
       try {
         final publicKeys = await sdk.api.account.decodeAddress([data]);
-        store!.account.substratePubKey = publicKeys?.values.first;
+        store!.account.substratePubKey = publicKeys?.keys.first;
       } catch (_) {
         store!.account.substratePubKey = "";
       }
