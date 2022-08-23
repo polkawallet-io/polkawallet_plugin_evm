@@ -149,7 +149,9 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                       id: e['contractAddress'],
                       tokenNameId: e['contractAddress'],
                       symbol: e['symbol'],
-                      name: e['symbol'].toString().toUpperCase(),
+                      name: e['symbol'] == widget.plugin.nativeToken
+                          ? "W${e['symbol']}"
+                          : e['symbol'],
                       fullName: e['name'],
                       decimals: e['decimals'],
                       amount: e['amount'],

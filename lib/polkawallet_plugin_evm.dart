@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
-import 'package:polkawallet_plugin_evm/service/PluginService.dart';
+import 'package:polkawallet_plugin_evm/service/index.dart';
 import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
 import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
@@ -115,7 +115,7 @@ class PluginEvm extends PolkawalletPlugin {
     final Map<String, Widget> all = {};
     network_native_token.values.forEach((token) {
       all[token] = Image.asset(
-          'packages/polkawallet_plugin_evm/assets/images/tokens/$token.png');
+          'packages/polkawallet_plugin_evm/assets/images/tokens/${token.toUpperCase().toString()}.png');
     });
     return all;
   }
@@ -123,6 +123,7 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   List<TokenBalanceData> get noneNativeTokensAll {
     return store?.assets.tokenBalanceMap.values.toList() ?? [];
+    // return [];
   }
 
   PluginStore? _store;
@@ -139,7 +140,7 @@ class PluginEvm extends PolkawalletPlugin {
     _store = PluginStore(this);
     _store!.init();
 
-    _service = PluginService(keyring);
+    _service = PluginService(keyring, this);
 
     _loadAccoundData(keyring.current.toKeyPairData());
     await _loadWallet();
@@ -195,42 +196,38 @@ class PluginEvm extends PolkawalletPlugin {
     store!.account.querying = false;
   }
 
-  Future<void> updateBalance(TokenBalanceData token) async {
+  Future<void> updateBalanceNoneNativeToken(TokenBalanceData token) async {
     final tokenBalance = await sdk.api.eth.account
         .getTokenBalance(service!.keyring.current.address!, [token.id!]);
     noneNativeTokensAll.removeWhere((element) => element.id == token.id);
-    final tokens = noneNativeTokensAll.toList()
-      ..addAll(
-          List<TokenBalanceData>.from(tokenBalance!.map((e) => TokenBalanceData(
-                id: e['contractAddress'],
-                tokenNameId: e['contractAddress'],
-                symbol: e['symbol'],
-                name: e['symbol'].toString().toUpperCase(),
-                fullName: e['name'],
-                decimals: e['decimals'],
-                amount: e['amount'],
-                detailPageRoute: TokenDetailPage.route,
-              ))));
-    store!.assets.setTokenBalanceMap(tokens, service!.keyring.current.address);
-    balances.isTokensFromCache = false;
+    if (tokenBalance != null && tokenBalance.isNotEmpty) {
+      final tokens = noneNativeTokensAll.toList();
+      tokens.forEach((element) {
+        if (element.id == token.id) {
+          element.amount = tokenBalance.first['amount'];
+        }
+      });
+      store!.assets
+          .setTokenBalanceMap(tokens, service!.keyring.current.address);
+    }
   }
 
   Future<void> updateBalanceNoneNativeTokensAll() async {
     final tokenBalance = await sdk.api.eth.account.getTokenBalance(
         service!.keyring.current.address!,
         noneNativeTokensAll.map((e) => e.id!).toList());
-    store!.assets.setTokenBalanceMap(
-        List<TokenBalanceData>.from(tokenBalance!.map((e) => TokenBalanceData(
-              id: e['contractAddress'],
-              tokenNameId: e['contractAddress'],
-              symbol: e['symbol'],
-              name: e['symbol'].toString().toUpperCase(),
-              fullName: e['name'],
-              decimals: e['decimals'],
-              amount: e['amount'],
-              detailPageRoute: TokenDetailPage.route,
-            ))),
-        service!.keyring.current.address);
+    if (tokenBalance != null && tokenBalance.isNotEmpty) {
+      final tokens = noneNativeTokensAll.toList();
+      tokens.forEach((element) {
+        tokenBalance.forEach((e) {
+          if (element.id == e["contractAddress"]) {
+            element.amount = e['amount'];
+          }
+        });
+      });
+      store!.assets
+          .setTokenBalanceMap(tokens, service!.keyring.current.address);
+    }
     balances.isTokensFromCache = false;
   }
 

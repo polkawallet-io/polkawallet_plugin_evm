@@ -3,14 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:polkawallet_plugin_karura/api/history/types/historyData.dart';
-// import 'package:polkawallet_plugin_karura/pages/assets/transferDetailPage.dart';
-// import 'package:polkawallet_plugin_karura/pages/assets/transferPage.dart';
+
+import 'package:polkawallet_ui/utils/i18n.dart';
 import 'package:polkawallet_plugin_evm/polkawallet_plugin_evm.dart';
+import 'package:polkawallet_plugin_evm/store/types/historyData.dart';
 import 'package:polkawallet_plugin_evm/utils/i18n/index.dart';
-// import 'package:polkawallet_plugin_karura/utils/assets.dart';
-// import 'package:polkawallet_plugin_karura/utils/format.dart';
-// import 'package:polkawallet_plugin_karura/utils/i18n/index.dart';
 import 'package:polkawallet_sdk/plugin/store/balances.dart';
 import 'package:polkawallet_sdk/storage/keyring.dart';
 import 'package:polkawallet_sdk/utils/i18n.dart';
@@ -45,16 +42,28 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
       new GlobalKey<RefreshIndicatorState>();
 
   int _txFilterIndex = 0;
+  bool isLoadHistory = true;
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final TokenBalanceData token =
-          ModalRoute.of(context)!.settings.arguments as TokenBalanceData;
-      // widget.plugin.service!.assets.updateTokenBalances(token);
-      // widget.plugin.service!.history.getTransfers(token.tokenNameId ?? '');
+      getHistory();
+    });
+  }
+
+  Future<void> getHistory() async {
+    final TokenBalanceData token =
+        ModalRoute.of(context)!.settings.arguments as TokenBalanceData;
+    if (token.id == token.symbol) {
+      //NativeToken
+      await widget.plugin.service!.history.getNativeTokenHistory(token.id!);
+    } else {
+      await widget.plugin.service!.history.getHistory(token.id!);
+    }
+    setState(() {
+      isLoadHistory = false;
     });
   }
 
@@ -69,19 +78,45 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(token.symbol!),
-          centerTitle: true,
-          elevation: 0.0,
-          leading: const BackBtn()),
+        title: Text(token.symbol!),
+        centerTitle: true,
+        elevation: 0.0,
+        leading: const BackBtn(),
+        actions: [
+          Padding(
+              padding: EdgeInsets.only(right: 16.w),
+              child: v3.IconButton(
+                  isBlueBg: true,
+                  icon: Icon(
+                    Icons.more_horiz,
+                    color: Theme.of(context).cardColor,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    final snLink =
+                        'https://blockscout.${widget.plugin.nodeList.first.endpoint!.split("://").last.split("/").first}/address/${widget.plugin.service!.keyring.current.address}';
+                    UI.launchURL(snLink);
+                  })),
+        ],
+      ),
       body: Observer(
         builder: (_) {
           final tokenSymbol = token.symbol;
-          final index = widget.plugin.noneNativeTokensAll.indexWhere(
-              (element) => element.tokenNameId == token.tokenNameId);
+          final index = widget.plugin.noneNativeTokensAll
+              .indexWhere((element) => element.id == token.id);
           final balance = index >= 0
-              ? widget.plugin.noneNativeTokensAll.firstWhere(
-                  (element) => element.tokenNameId == token.tokenNameId)
-              : token;
+              ? widget.plugin.noneNativeTokensAll
+                  .firstWhere((element) => element.id == token.id)
+              : TokenBalanceData(
+                  amount:
+                      widget.plugin.balances.native?.freeBalance?.toString() ??
+                          "",
+                  decimals: 18,
+                  id: widget.plugin.nativeToken.toUpperCase(),
+                  symbol: widget.plugin.nativeToken.toUpperCase(),
+                  name: widget.plugin.nativeToken.toUpperCase(),
+                  fullName:
+                      '${widget.plugin.basic.name} ${dic['manage.native']}');
           widget.plugin.store!.assets.customAssets;
 
           // final tokensConfig =
@@ -92,19 +127,25 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
           //   transferDisabled = List.of(disabledTokens).contains(tokenSymbol);
           // }
 
-          // final list =
-          //     widget.plugin.store?.history.transfersMap[token.tokenNameId];
-          // final txs = list?.toList();
-          // if (_txFilterIndex > 0) {
-          //   txs?.retainWhere((e) =>
-          //       (_txFilterIndex == 1 ? e.data!['to'] : e.data?['from']) ==
-          //       widget.keyring.current.address);
-          // }
+          final list = widget.plugin.store?.history.historyMaps[
+                  widget.plugin.service!.keyring.current.address]?[token.id] ??
+              [];
+          final txs = list.toList();
+          if (_txFilterIndex > 0) {
+            txs.retainWhere((e) =>
+                (_txFilterIndex == 1 ? e.to : e.from) ==
+                widget.plugin.service!.keyring.current.address);
+          }
+
+          final titleColor = Theme.of(context).cardColor;
           return RefreshIndicator(
             color: Colors.black,
             backgroundColor: Colors.white,
             key: _refreshKey,
-            onRefresh: () => widget.plugin.updateBalance(token),
+            onRefresh: token.symbol == widget.plugin.nativeToken
+                ? () => widget.plugin.updateBalances(
+                    widget.plugin.service!.keyring.current.toKeyPairData())
+                : () => widget.plugin.updateBalanceNoneNativeToken(token),
             child: Column(
               children: <Widget>[
                 BalanceCard(
@@ -248,33 +289,34 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                         )
                       ],
                     )),
-                // Expanded(
-                //   child: Container(
-                //     color: titleColor,
-                //     child: txs == null
-                //         ? Container(
-                //             child: Row(
-                //               mainAxisAlignment: MainAxisAlignment.center,
-                //               children: [PluginLoadingWidget()],
-                //             ),
-                //           )
-                //         : ListView.builder(
-                //             itemCount: txs.length + 1,
-                //             itemBuilder: (_, i) {
-                //               if (i == txs.length) {
-                //                 return ListTail(
-                //                     isEmpty: txs.length == 0, isLoading: false);
-                //               }
-                //               return TransferListItem(
-                //                 data: txs[i],
-                //                 token: token,
-                //                 isOut: txs[i].data!['from'] ==
-                //                     widget.keyring.current.address,
-                //               );
-                //             },
-                //           ),
-                //   ),
-                // ),
+                Expanded(
+                  child: Container(
+                    color: titleColor,
+                    child: isLoadHistory
+                        ? Container(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [PluginLoadingWidget()],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: txs.length + 1,
+                            itemBuilder: (_, i) {
+                              if (i == txs.length) {
+                                return ListTail(
+                                    isEmpty: txs.length == 0, isLoading: false);
+                              }
+                              return TransferListItem(
+                                data: txs[i],
+                                token: token,
+                                isOut: txs[i].from ==
+                                    widget.plugin.service!.keyring.current
+                                        .address,
+                              );
+                            },
+                          ),
+                  ),
+                ),
               ],
             ),
           );
@@ -442,66 +484,66 @@ class BalanceCard extends StatelessWidget {
   }
 }
 
-// class TransferListItem extends StatelessWidget {
-//   TransferListItem({
-//     this.data,
-//     this.token,
-//     this.isOut,
-//     this.crossChain,
-//   });
+class TransferListItem extends StatelessWidget {
+  TransferListItem({
+    this.data,
+    this.token,
+    this.isOut,
+    this.crossChain,
+  });
 
-//   final HistoryData? data;
-//   final TokenBalanceData? token;
-//   final String? crossChain;
-//   final bool? isOut;
+  final HistoryData? data;
+  final TokenBalanceData? token;
+  final String? crossChain;
+  final bool? isOut;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final address = isOut! ? data!.data!['to'] : data!.data!['from'];
-//     final title = isOut!
-//         ? 'Send to ${Fmt.address(address)}'
-//         : 'Receive from ${Fmt.address(address)}';
-//     final amount = Fmt.priceFloorBigInt(
-//         BigInt.parse(data!.data!['amount']), token?.decimals ?? 12,
-//         lengthMax: 6);
+  @override
+  Widget build(BuildContext context) {
+    final address = isOut! ? data!.to : data!.from;
+    final title = isOut!
+        ? 'Send to ${Fmt.address(address)}'
+        : 'Receive from ${Fmt.address(address)}';
+    final amount = Fmt.priceFloorBigInt(
+        BigInt.parse(data!.value!), token?.decimals ?? 12,
+        lengthMax: 6);
 
-//     return ListTile(
-//       dense: true,
-//       minLeadingWidth: 32,
-//       horizontalTitleGap: 8,
-//       leading: isOut!
-//           ? TransferIcon(
-//               type: TransferIconType.rollOut,
-//               bgColor: Theme.of(context).cardColor)
-//           : TransferIcon(
-//               type: TransferIconType.rollIn, bgColor: Color(0xFFD7D7D7)),
-//       title: Text('$title${crossChain != null ? ' ($crossChain)' : ''}',
-//           style: Theme.of(context).textTheme.headline4),
-//       subtitle: Text(Fmt.dateTime(DateFormat("yyyy-MM-ddTHH:mm:ss")
-//           .parse(data!.data!['timestamp'], true))),
-//       trailing: Container(
-//         width: 110,
-//         child: Row(
-//           children: <Widget>[
-//             Expanded(
-//               child: Text(
-//                 '${isOut! ? '-' : '+'} $amount',
-//                 style: Theme.of(context).textTheme.headline5!.copyWith(
-//                     color: Theme.of(context).toggleableActiveColor,
-//                     fontWeight: FontWeight.w600),
-//                 textAlign: TextAlign.right,
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       onTap: () {
-//         Navigator.pushNamed(
-//           context,
-//           TransferDetailPage.route,
-//           arguments: data,
-//         );
-//       },
-//     );
-//   }
-// }
+    return ListTile(
+      dense: true,
+      minLeadingWidth: 32,
+      horizontalTitleGap: 8,
+      leading: isOut!
+          ? TransferIcon(
+              type: TransferIconType.rollOut,
+              bgColor: Theme.of(context).cardColor)
+          : TransferIcon(
+              type: TransferIconType.rollIn, bgColor: Color(0xFFD7D7D7)),
+      title: Text('$title${crossChain != null ? ' ($crossChain)' : ''}',
+          style: Theme.of(context).textTheme.headline4),
+      subtitle: Text(Fmt.dateTime(DateTime.fromMillisecondsSinceEpoch(
+          int.parse(data!.timeStamp!) * 1000))),
+      trailing: Container(
+        width: 110,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                '${isOut! ? '-' : '+'} $amount',
+                style: Theme.of(context).textTheme.headline5!.copyWith(
+                    color: Theme.of(context).toggleableActiveColor,
+                    fontWeight: FontWeight.w600),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () {
+        // Navigator.pushNamed(
+        //   context,
+        //   TransferDetailPage.route,
+        //   arguments: data,
+        // );
+      },
+    );
+  }
+}

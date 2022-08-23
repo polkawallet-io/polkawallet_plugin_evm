@@ -2,7 +2,6 @@ const network_acala = 'acala';
 const network_karura = 'karura';
 
 const network_native_token = {network_acala: 'ACA', network_karura: 'KAR'};
-//History  https://blockscout.karura-dev.aca-dev.network/api?module=account&action=txlist&address=0xfff2c1b954a91802dc97f65af37378329041aa7b
 
 const network_node_list = {
   network_acala: [
