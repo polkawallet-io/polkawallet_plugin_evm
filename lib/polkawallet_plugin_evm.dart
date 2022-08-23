@@ -156,9 +156,8 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   Future<void> onAccountChanged(KeyPairData acc) async {
-    _loadAccoundData(acc);
     store!.account.setSubstrate(null, acc);
-
+    _loadAccoundData(acc);
     if (connected) {
       updateBalanceNoneNativeTokensAll();
       _getSubstrateAccount(acc);
