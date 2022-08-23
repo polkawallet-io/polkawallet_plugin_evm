@@ -59,16 +59,7 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   List<HomeNavItem> getNavItems(BuildContext context, Keyring keyring) {
-    // TODO: implement getNavItems
-    return [
-      HomeNavItem(
-        text: "test",
-        icon: Container(),
-        iconActive: Container(),
-        isAdapter: true,
-        content: Container(),
-      ),
-    ];
+    return [];
   }
 
   @override
@@ -84,7 +75,7 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   List<NetworkParams> get nodeList {
-    return network_node_list[this.network]!
+    return network_node_list[network]!
         .map((e) => NetworkParams.fromJson(e))
         .toList();
   }
@@ -113,10 +104,10 @@ class PluginEvm extends PolkawalletPlugin {
 
   Map<String, Widget> _getTokenIcons() {
     final Map<String, Widget> all = {};
-    network_native_token.values.forEach((token) {
+    for (var token in network_native_token.values) {
       all[token] = Image.asset(
           'packages/polkawallet_plugin_evm/assets/images/tokens/${token.toUpperCase().toString()}.png');
-    });
+    }
     return all;
   }
 
@@ -136,7 +127,7 @@ class PluginEvm extends PolkawalletPlugin {
   Future<void> onWillStartEVM(KeyringEVM keyring) async {
     tokenIcons = _getTokenIcons();
 
-    await GetStorage.init(this.basic.name ?? "plugin_evm");
+    await GetStorage.init(basic.name ?? "plugin_evm");
     _store = PluginStore(this);
     _store!.init();
 
@@ -202,11 +193,11 @@ class PluginEvm extends PolkawalletPlugin {
     noneNativeTokensAll.removeWhere((element) => element.id == token.id);
     if (tokenBalance != null && tokenBalance.isNotEmpty) {
       final tokens = noneNativeTokensAll.toList();
-      tokens.forEach((element) {
+      for (var element in tokens) {
         if (element.id == token.id) {
           element.amount = tokenBalance.first['amount'];
         }
-      });
+      }
       store!.assets
           .setTokenBalanceMap(tokens, service!.keyring.current.address);
     }
@@ -218,13 +209,13 @@ class PluginEvm extends PolkawalletPlugin {
         noneNativeTokensAll.map((e) => e.id!).toList());
     if (tokenBalance != null && tokenBalance.isNotEmpty) {
       final tokens = noneNativeTokensAll.toList();
-      tokens.forEach((element) {
-        tokenBalance.forEach((e) {
+      for (var element in tokens) {
+        for (var e in tokenBalance) {
           if (element.id == e["contractAddress"]) {
             element.amount = e['amount'];
           }
-        });
-      });
+        }
+      }
       store!.assets
           .setTokenBalanceMap(tokens, service!.keyring.current.address);
     }

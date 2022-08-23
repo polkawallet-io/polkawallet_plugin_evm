@@ -52,7 +52,6 @@ abstract class _AssetsStore with Store {
       };
     }
     tokenBalanceMap = data;
-    print("setTokenBalanceMap====${dataForCache}");
 
     if (shouldCache) {
       cache!.tokens.val = dataForCache;
@@ -97,7 +96,6 @@ abstract class _AssetsStore with Store {
       final tokens = cachedTokens.values.toList();
       tokens.retainWhere((e) => e['tokenNameId'] != null);
       final cachedAssetsList = await cache!.storage().read(balanceKey);
-      print("loadCache====${tokens}");
       setTokenBalanceMap(
           List<TokenBalanceData>.from(tokens.map((e) => TokenBalanceData(
               id: e['id'],
