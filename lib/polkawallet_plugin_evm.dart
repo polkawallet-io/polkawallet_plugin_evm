@@ -159,6 +159,7 @@ class PluginEvm extends PolkawalletPlugin {
   }
 
   Future<void> _getSubstrateAccount(KeyPairData acc) async {
+    if (acc.address == null) return;
     store!.account.querying = true;
     await sdk.api.bridge.init();
     await sdk.api.bridge.connectFromChains([
