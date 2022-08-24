@@ -47,16 +47,14 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   bool hasFocus = false;
   bool isSeach = false;
 
-  // int _assetsTypeIndex = 0;
-
   Future<void> _onSave() async {
     final config = Map<String, bool>.of(_tokenVisible);
     if (_hide0) {
-      widget.plugin.noneNativeTokensAll.forEach((e) {
+      for (var e in widget.plugin.noneNativeTokensAll) {
         if (Fmt.balanceInt(e.amount) == BigInt.zero) {
-          config[e.id!] = false;
+          config[e.id!.toLowerCase()] = false;
         }
-      });
+      }
     }
 
     widget.plugin.store?.assets.setCustomAssets(
@@ -89,25 +87,26 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final nativeToken = widget.plugin.nativeToken.toUpperCase();
+      final nativeToken = widget.plugin.nativeToken.toLowerCase();
       final Map<String, bool> defaultVisibleMap = {nativeToken: true};
 
-      if (widget.plugin.store!.assets.customAssets.keys.length == 0) {
+      if (widget.plugin.store!.assets.customAssets.keys.isEmpty) {
         // final defaultList = widget.plugin.defaultTokens.toList();
         // defaultList.forEach((token) {
         //   defaultVisibleMap[token] = true;
         // });
 
-        widget.plugin.noneNativeTokensAll.forEach((token) {
-          if (defaultVisibleMap[token.id] == null) {
-            defaultVisibleMap[token.id!] = false;
+        for (var token in widget.plugin.noneNativeTokensAll) {
+          if (defaultVisibleMap[token.id!.toLowerCase()] == null) {
+            defaultVisibleMap[token.id!.toLowerCase()] = false;
           }
-        });
+        }
       } else {
-        widget.plugin.noneNativeTokensAll.forEach((token) {
-          defaultVisibleMap[token.id!] =
-              widget.plugin.store!.assets.customAssets[token.id!] ?? false;
-        });
+        for (var token in widget.plugin.noneNativeTokensAll) {
+          defaultVisibleMap[token.id!.toLowerCase()] = widget
+                  .plugin.store!.assets.customAssets[token.id!.toLowerCase()] ??
+              false;
+        }
       }
 
       setState(() {
@@ -128,13 +127,13 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       _seachBalance = [];
     });
     if (Fmt.isAddressETH(input.trim()) &&
-        widget.plugin.noneNativeTokensAll
-                .indexWhere((element) => element.id == input.trim()) <
+        widget.plugin.noneNativeTokensAll.indexWhere((element) =>
+                element.id!.toLowerCase() == input.trim().toLowerCase()) <
             0) {
       if (_delayTimer != null) {
         _delayTimer!.cancel();
       }
-      _delayTimer = Timer(Duration(milliseconds: 500), () async {
+      _delayTimer = Timer(const Duration(milliseconds: 500), () async {
         try {
           setState(() {
             _isLoading = true;
@@ -168,11 +167,11 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     }
 
     setState(() {
-      _filter = _filterCtrl.text.trim().toUpperCase();
+      _filter = _filterCtrl.text.trim().toLowerCase();
     });
   }
 
-  Widget buildSeach() {
+  Widget _buildSeach() {
     final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
     final List<TokenBalanceData> list = [];
     if (_filterCtrl.text.trim().isNotEmpty) {
@@ -186,26 +185,38 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       list.addAll(widget.plugin.noneNativeTokensAll);
 
       list.retainWhere((token) =>
-          token.symbol!.toUpperCase().contains(_filter) ||
-          (token.name ?? '').toUpperCase().contains(_filter) ||
-          (token.id ?? '').toUpperCase().contains(_filter));
+          token.symbol!.toLowerCase().contains(_filter.toLowerCase()) ||
+          (token.name ?? '').toLowerCase().contains(_filter.toLowerCase()) ||
+          (token.id ?? '').toLowerCase().contains(_filter.toLowerCase()));
 
-      _seachBalance.forEach((e) {
-        if (list.indexWhere((element) => element.id == e.id) < 0) {
+      for (var e in _seachBalance) {
+        if (list.indexWhere(
+                (element) => element.id!.toLowerCase() == e.id!.toLowerCase()) <
+            0) {
           list.add(e);
         }
-      });
+      }
     }
+    return _tokensList(list);
+  }
+
+  Widget _tokensList(List<TokenBalanceData> list) {
     return Container(
-        color: UI.isDarkTheme(context) ? Color(0xFF3D3D3D) : Colors.transparent,
+        color: UI.isDarkTheme(context)
+            ? const Color(0xFF3D3D3D)
+            : Colors.transparent,
         child: ListView.builder(
-          physics: BouncingScrollPhysics(),
-          padding: EdgeInsets.only(bottom: 16),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 16),
           itemCount: list.length,
           itemBuilder: (_, i) {
-            final isImport = widget.plugin.noneNativeTokensAll
-                    .indexWhere((element) => element.id == list[i].id) >=
-                0;
+            final isImport = widget.plugin.noneNativeTokensAll.indexWhere(
+                        (element) =>
+                            element.id!.toLowerCase() ==
+                            list[i].id!.toLowerCase()) >=
+                    0 ||
+                list[i].id!.toUpperCase() ==
+                    widget.plugin.nativeToken.toUpperCase();
             return Column(
               children: [
                 Container(
@@ -245,12 +256,12 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                   Fmt.balanceInt(list[i].amount),
                                   list[i].decimals!,
                                   lengthMax: 4),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: -0.6),
                             )),
                         Image.asset(
-                          "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
+                          "assets/images/${(_tokenVisible[list[i].id!.toLowerCase()] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : isImport ? "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "import.png"}",
                           fit: BoxFit.contain,
                           width: 16.w,
                         )
@@ -265,14 +276,15 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                               widget.plugin.service!.keyring.current.address);
                         }
                         setState(() {
-                          _tokenVisible[list[i].id!] =
-                              !(_tokenVisible[list[i].id] ?? false);
+                          _tokenVisible[list[i].id!.toLowerCase()] =
+                              !(_tokenVisible[list[i].id!.toLowerCase()] ??
+                                  false);
                         });
                       }
                     },
                   ),
                 ),
-                Divider(
+                const Divider(
                   height: 1,
                 )
               ],
@@ -343,7 +355,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     child: Container(
                       padding: EdgeInsets.fromLTRB(15.h, 0, 15.h, 4),
                       margin: EdgeInsets.only(right: 14.w),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.transparent,
                         image: DecorationImage(
                             image: AssetImage("assets/images/icon_bg.png"),
@@ -422,7 +434,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                         ))),
                 Expanded(
                     child: isSeach
-                        ? buildSeach()
+                        ? _buildSeach()
                         : Column(
                             children: [
                               Container(
@@ -444,7 +456,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                             size: 14,
                                           ),
                                           Container(
-                                            margin: EdgeInsets.only(
+                                            margin: const EdgeInsets.only(
                                                 left: 4, right: 16),
                                             child: Text(
                                               dic['manage.hide']!,
@@ -471,165 +483,15 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                         });
                                       },
                                     ),
-                                    // Visibility(
-                                    //     visible: widget.service.plugin.basic.name ==
-                                    //             plugin_name_karura ||
-                                    //         widget.service.plugin.basic.name == plugin_name_acala,
-                                    //     child: GestureDetector(
-                                    //       child: SvgPicture.asset(
-                                    //         'assets/images/icon_screening.svg',
-                                    //         color: Colors.white,
-                                    //         width: 22,
-                                    //       ),
-                                    //       onTap: () {
-                                    //         final dic = I18n.of(context)
-                                    //             .getDic(i18n_full_dic_ui, 'common');
-                                    //         showCupertinoModalPopup(
-                                    //           context: context,
-                                    //           builder: (context) {
-                                    //             return PolkawalletActionSheet(
-                                    //               actions: <Widget>[
-                                    //                 ...assetsType.map((element) {
-                                    //                   final index = assetsType.indexOf(element);
-                                    //                   return PolkawalletActionSheetAction(
-                                    //                     isDefaultAction:
-                                    //                         index == _assetsTypeIndex,
-                                    //                     onPressed: () {
-                                    //                       if (index != _assetsTypeIndex) {
-                                    //                         setState(() {
-                                    //                           _assetsTypeIndex = index;
-                                    //                         });
-                                    //                       }
-                                    //                       Navigator.pop(context);
-                                    //                     },
-                                    //                     child: Text(element),
-                                    //                   );
-                                    //                 }).toList()
-                                    //               ],
-                                    //               cancelButton: PolkawalletActionSheetAction(
-                                    //                 onPressed: () {
-                                    //                   Navigator.pop(context);
-                                    //                 },
-                                    //                 child: Text(dic['cancel']),
-                                    //               ),
-                                    //             );
-                                    //           },
-                                    //         );
-                                    //       },
-                                    //     ))
                                   ],
                                 ),
                               ),
                               Expanded(
-                                child: _tokenVisible.keys.length == 0
-                                    ? Center(
+                                child: _tokenVisible.keys.isEmpty
+                                    ? const Center(
                                         child: CupertinoActivityIndicator(
-                                            color: const Color(0xFF3C3C44)))
-                                    : Container(
-                                        color: UI.isDarkTheme(context)
-                                            ? Color(0xFF3D3D3D)
-                                            : Colors.transparent,
-                                        child: ListView.builder(
-                                          physics: BouncingScrollPhysics(),
-                                          padding: EdgeInsets.only(bottom: 16),
-                                          itemCount: list.length,
-                                          itemBuilder: (_, i) {
-                                            return Column(
-                                              children: [
-                                                Container(
-                                                  color: Colors.transparent,
-                                                  child: ListTile(
-                                                    dense: list[i].fullName !=
-                                                        null,
-                                                    leading: TokenIcon(
-                                                      list[i].id!,
-                                                      widget.plugin.tokenIcons,
-                                                      symbol: list[i].id,
-                                                    ),
-                                                    title: Text(list[i].name!,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .headline4
-                                                            ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600)),
-                                                    subtitle: list[i].fullName !=
-                                                            null
-                                                        ? Text(
-                                                            '${list[i].fullName}',
-                                                            maxLines: 2,
-                                                            style: TextStyle(
-                                                                fontSize: UI
-                                                                    .getTextSize(
-                                                                        10, context),
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w300,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .headline1
-                                                                    ?.color,
-                                                                fontFamily: UI
-                                                                    .getFontFamily(
-                                                                        'SF_Pro',
-                                                                        context)))
-                                                        : null,
-                                                    trailing: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Padding(
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                    right:
-                                                                        18.w),
-                                                            child: Text(
-                                                              Fmt.priceFloorBigInt(
-                                                                  Fmt.balanceInt(
-                                                                      list[i]
-                                                                          .amount),
-                                                                  list[i]
-                                                                      .decimals!,
-                                                                  lengthMax: 4),
-                                                              style: TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  letterSpacing:
-                                                                      -0.6),
-                                                            )),
-                                                        Image.asset(
-                                                          "assets/images/${(_tokenVisible[list[i].id] ?? false) ? "icon_circle_select${UI.isDarkTheme(context) ? "_dark" : ""}.png" : "icon_circle_unselect${UI.isDarkTheme(context) ? "_dark" : ""}.png"}",
-                                                          fit: BoxFit.contain,
-                                                          width: 16.w,
-                                                        )
-                                                      ],
-                                                    ),
-                                                    onTap: () {
-                                                      if (list[i].id !=
-                                                          widget.plugin
-                                                              .nativeToken) {
-                                                        setState(() {
-                                                          _tokenVisible[
-                                                                  list[i].id!] =
-                                                              !(_tokenVisible[
-                                                                      list[i]
-                                                                          .id] ??
-                                                                  false);
-                                                        });
-                                                      }
-                                                    },
-                                                  ),
-                                                ),
-                                                Divider(
-                                                  height: 1,
-                                                )
-                                              ],
-                                            );
-                                          },
-                                        )),
+                                            color: Color(0xFF3C3C44)))
+                                    : _tokensList(list),
                               ),
                             ],
                           )),

@@ -10,10 +10,10 @@ import 'package:polkawallet_ui/utils/format.dart';
 import 'package:intl/intl.dart';
 
 class TransferDetailPage extends StatelessWidget {
-  TransferDetailPage(this.plugin);
+  const TransferDetailPage(this.plugin, {Key? key}) : super(key: key);
   final PluginEvm plugin;
 
-  static final String route = '/assets/token/tx';
+  static const String route = '/assets/token/tx';
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class TransferDetailPage extends StatelessWidget {
         TxDetailInfoItem(
           label: dic['amount'],
           content: Text(
-            '${tx.from == plugin.service!.keyring.current.address ? '-' : '+'}${Fmt.balance(tx.value, int.tryParse(tx.tokenDecimal ?? "") ?? 12, length: 6)} ${tx.tokenName}',
+            '${tx.from == plugin.service!.keyring.current.address ? '-' : '+'}${Fmt.balance(tx.value, int.tryParse(tx.tokenDecimal ?? "") ?? 12, length: 6)} ${tx.tokenSymbol}',
             style: Theme.of(context).textTheme.headline1,
           ),
         ),

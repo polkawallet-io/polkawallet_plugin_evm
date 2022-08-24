@@ -41,7 +41,7 @@ class TokenDetailPage extends StatefulWidget {
 
 class _TokenDetailPageSate extends State<TokenDetailPage> {
   final GlobalKey<RefreshIndicatorState> _refreshKey =
-      new GlobalKey<RefreshIndicatorState>();
+      GlobalKey<RefreshIndicatorState>();
 
   int _txFilterIndex = 0;
   bool isLoadHistory = true;
@@ -104,11 +104,12 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
       body: Observer(
         builder: (_) {
           final tokenSymbol = token.symbol;
-          final index = widget.plugin.noneNativeTokensAll
-              .indexWhere((element) => element.id == token.id);
+          final index = widget.plugin.noneNativeTokensAll.indexWhere(
+              (element) =>
+                  element.id!.toLowerCase() == token.id!.toLowerCase());
           final balance = index >= 0
-              ? widget.plugin.noneNativeTokensAll
-                  .firstWhere((element) => element.id == token.id)
+              ? widget.plugin.noneNativeTokensAll.firstWhere((element) =>
+                  element.id!.toLowerCase() == token.id!.toLowerCase())
               : TokenBalanceData(
                   amount:
                       widget.plugin.balances.native?.freeBalance?.toString() ??
@@ -157,7 +158,7 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                   symbol: tokenSymbol ?? '',
                   decimals: token.decimals!,
                   tokenPrice: token.getPrice != null ? token.getPrice!() : 0.0,
-                  bgColors: [Color(0xFF303153), Color(0xFF161921)],
+                  bgColors: const [Color(0xFF303153), Color(0xFF161921)],
                   icon: TokenIcon(
                     token.id ?? "",
                     widget.plugin.tokenIcons,
@@ -173,7 +174,7 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                             padding: EdgeInsets.symmetric(horizontal: 3.w),
                             child: CardButton(
                               icon: Padding(
-                                padding: EdgeInsets.only(left: 3),
+                                padding: const EdgeInsets.only(left: 3),
                                 child: Image.asset(
                                   "packages/polkawallet_plugin_karura/assets/images/send${UI.isDarkTheme(context) ? "_dark" : ""}.png",
                                   width: 32,
@@ -224,18 +225,19 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                               margin: EdgeInsets.only(right: 8.w),
                               decoration: BoxDecoration(
                                 color: UI.isDarkTheme(context)
-                                    ? Color(0x52000000)
+                                    ? const Color(0x52000000)
                                     : Colors.transparent,
                                 borderRadius: UI.isDarkTheme(context)
-                                    ? BorderRadius.all(Radius.circular(5))
+                                    ? const BorderRadius.all(Radius.circular(5))
                                     : null,
                                 border: UI.isDarkTheme(context)
                                     ? Border.all(
-                                        color: Color(0x26FFFFFF), width: 1)
+                                        color: const Color(0x26FFFFFF),
+                                        width: 1)
                                     : null,
                                 image: UI.isDarkTheme(context)
                                     ? null
-                                    : DecorationImage(
+                                    : const DecorationImage(
                                         image: AssetImage(
                                             "assets/images/bg_tag.png"),
                                         fit: BoxFit.fill),
@@ -285,7 +287,7 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                                     'assets/images/icon_screening.svg',
                                     color: UI.isDarkTheme(context)
                                         ? Colors.white
-                                        : Color(0xFF979797),
+                                        : const Color(0xFF979797),
                                     width: 22.h,
                                   ),
                                 ))
@@ -297,18 +299,16 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                   child: Container(
                     color: titleColor,
                     child: isLoadHistory
-                        ? Container(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [PluginLoadingWidget()],
-                            ),
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [PluginLoadingWidget()],
                           )
                         : ListView.builder(
                             itemCount: txs.length + 1,
                             itemBuilder: (_, i) {
                               if (i == txs.length) {
                                 return ListTail(
-                                    isEmpty: txs.length == 0, isLoading: false);
+                                    isEmpty: txs.isEmpty, isLoading: false);
                               }
                               return TransferListItem(
                                 data: txs[i],
@@ -334,18 +334,18 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
 Widget priceItemBuild(Widget icon, String title, String price, Color color,
     BuildContext context) {
   return Padding(
-      padding: EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
               height: 18.w,
               width: 18.w,
-              padding: EdgeInsets.all(2),
+              padding: const EdgeInsets.all(2),
               margin: EdgeInsets.only(right: 8.w),
               decoration: BoxDecoration(
                   color: Colors.white.withAlpha(27),
-                  borderRadius: BorderRadius.all(Radius.circular(4))),
+                  borderRadius: const BorderRadius.all(Radius.circular(4))),
               child: icon),
           Text(
             title,
@@ -371,14 +371,15 @@ Widget priceItemBuild(Widget icon, String title, String price, Color color,
 }
 
 class BalanceCard extends StatelessWidget {
-  BalanceCard(
+  const BalanceCard(
     this.tokenBalance, {
+    Key? key,
     this.tokenPrice,
     required this.symbol,
     required this.decimals,
     this.bgColors,
     this.icon,
-  });
+  }) : super(key: key);
 
   final String symbol;
   final int decimals;
@@ -392,9 +393,7 @@ class BalanceCard extends StatelessWidget {
     // final dic = I18n.of(context)!.getDic(i18n_full_dic_karura, 'common')!;
 
     final free = Fmt.balanceInt(tokenBalance?.amount ?? '0');
-    final locked = Fmt.balanceInt(tokenBalance?.locked ?? '0');
     final reserved = Fmt.balanceInt(tokenBalance?.reserved ?? '0');
-    final transferable = free - locked;
     final total = free + reserved;
 
     double? tokenValue;
@@ -412,14 +411,14 @@ class BalanceCard extends StatelessWidget {
         // padding: EdgeInsets.all(16.w),
         height: 172,
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(const Radius.circular(8)),
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
           gradient: LinearGradient(
             colors: bgColors ??
                 [Theme.of(context).primaryColor, Theme.of(context).hoverColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               // color: primaryColor.withAlpha(100),
               color: Color(0x4D000000),
@@ -433,7 +432,7 @@ class BalanceCard extends StatelessWidget {
           alignment: AlignmentDirectional.bottomEnd,
           children: [
             Padding(
-                padding: EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.only(top: 10),
                 child: Image.asset(
                   "packages/polkawallet_plugin_evm/assets/images/balanceCard.png",
                   width: 110,
@@ -443,7 +442,8 @@ class BalanceCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(margin: EdgeInsets.only(right: 8), child: icon),
+                    Container(
+                        margin: const EdgeInsets.only(right: 8), child: icon),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -490,12 +490,13 @@ class BalanceCard extends StatelessWidget {
 }
 
 class TransferListItem extends StatelessWidget {
-  TransferListItem({
+  const TransferListItem({
+    Key? key,
     this.data,
     this.token,
     this.isOut,
     this.crossChain,
-  });
+  }) : super(key: key);
 
   final HistoryData? data;
   final TokenBalanceData? token;
@@ -537,7 +538,7 @@ class TransferListItem extends StatelessWidget {
       subtitle: Text(Fmt.dateTime(DateTime.fromMillisecondsSinceEpoch(
           int.parse(data!.timeStamp!) * 1000,
           isUtc: true))),
-      trailing: Container(
+      trailing: SizedBox(
         width: 110,
         child: Row(
           children: <Widget>[

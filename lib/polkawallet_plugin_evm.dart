@@ -190,13 +190,14 @@ class PluginEvm extends PolkawalletPlugin {
   }
 
   Future<void> updateBalanceNoneNativeToken(TokenBalanceData token) async {
-    final tokenBalance = await sdk.api.eth.account
-        .getTokenBalance(service!.keyring.current.address!, [token.id!]);
-    noneNativeTokensAll.removeWhere((element) => element.id == token.id);
+    final tokenBalance = await sdk.api.eth.account.getTokenBalance(
+        service!.keyring.current.address!, [token.id!.toLowerCase()]);
+    noneNativeTokensAll.removeWhere(
+        (element) => element.id!.toLowerCase() == token.id!.toLowerCase());
     if (tokenBalance != null && tokenBalance.isNotEmpty) {
       final tokens = noneNativeTokensAll.toList();
       for (var element in tokens) {
-        if (element.id == token.id) {
+        if (element.id!.toLowerCase() == token.id!.toLowerCase()) {
           element.amount = tokenBalance.first['amount'];
         }
       }
@@ -208,12 +209,13 @@ class PluginEvm extends PolkawalletPlugin {
   Future<void> updateBalanceNoneNativeTokensAll() async {
     final tokenBalance = await sdk.api.eth.account.getTokenBalance(
         service!.keyring.current.address!,
-        noneNativeTokensAll.map((e) => e.id!).toList());
+        noneNativeTokensAll.map((e) => e.id!.toLowerCase()).toList());
     if (tokenBalance != null && tokenBalance.isNotEmpty) {
       final tokens = noneNativeTokensAll.toList();
       for (var element in tokens) {
         for (var e in tokenBalance) {
-          if (element.id == e["contractAddress"]) {
+          if (element.id!.toLowerCase() ==
+              e["contractAddress"].toString().toLowerCase()) {
             element.amount = e['amount'];
           }
         }
