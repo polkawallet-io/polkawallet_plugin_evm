@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart';
+import 'package:polkawallet_plugin_evm/common/constants.dart';
 
 class WalletApi {
   static const String _endpoint = 'https://api.polkawallet.io';
@@ -24,9 +25,9 @@ class WalletApi {
   }
 
   static Future<Map?> getHistory(
-      String node, String address, String contractaddress) async {
+      String network, String address, String contractaddress) async {
     final url =
-        'https://blockscout.${node.split("://").last.split("/").first}/api?module=account&action=tokentx&address=$address&contractaddress=$contractaddress';
+        '${network_url_api[network]}/api?module=account&action=tokentx&address=$address&contractaddress=$contractaddress&sort=desc';
     try {
       Response res = await get(Uri.parse(url));
       if (res == null) {
@@ -40,9 +41,10 @@ class WalletApi {
     }
   }
 
-  static Future<Map?> getNativeTokenHistory(String node, String address) async {
+  static Future<Map?> getNativeTokenHistory(
+      String network, String address) async {
     final url =
-        'https://blockscout.${node.split("://").last.split("/").first}/api?module=account&action=txlist&address=$address';
+        '${network_url_api[network]}/api?module=account&action=txlist&address=$address&sort=desc';
     try {
       Response res = await get(Uri.parse(url));
       if (res == null) {

@@ -20,7 +20,7 @@ class ServiceHistory {
       return plugin.store!.history.historyMaps[
           plugin.service!.keyring.current.address!]![contractaddress];
     }
-    final data = await WalletApi.getHistory(plugin.nodeList.first.endpoint!,
+    final data = await WalletApi.getHistory(plugin.network,
         plugin.service!.keyring.current.address!, contractaddress);
     if (data != null && data['result'] != null) {
       try {
@@ -47,8 +47,7 @@ class ServiceHistory {
           plugin.service!.keyring.current.address!]![contractaddress];
     }
     final data = await WalletApi.getNativeTokenHistory(
-        plugin.nodeList.first.endpoint!,
-        plugin.service!.keyring.current.address!);
+        plugin.network, plugin.service!.keyring.current.address!);
     if (data != null && data['result'] != null) {
       try {
         final list = (data['result'] as List)

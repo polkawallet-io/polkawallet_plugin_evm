@@ -28,6 +28,7 @@ HistoryData _$HistoryDataFromJson(Map<String, dynamic> json) {
     json['tokenName'] as String?,
     json['tokenSymbol'] as String?,
     json['transactionIndex'] as String?,
+    json['isError'] as String?,
   );
 }
 
@@ -53,4 +54,5 @@ Map<String, dynamic> _$HistoryDataToJson(HistoryData instance) =>
       'tokenName': instance.tokenName,
       'tokenSymbol': instance.tokenSymbol,
       'transactionIndex': instance.transactionIndex,
+      'isError': instance.isError,
     };

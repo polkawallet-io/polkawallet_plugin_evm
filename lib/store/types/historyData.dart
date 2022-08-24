@@ -20,10 +20,11 @@ class HistoryData {
   final String? nonce;
   final String? timeStamp;
   final String? to;
-  final String? tokenDecimal;
-  final String? tokenName;
-  final String? tokenSymbol;
+  String? tokenDecimal;
+  String? tokenName;
+  String? tokenSymbol;
   final String? transactionIndex;
+  final String? isError;
 
   HistoryData(
       this.value,
@@ -45,7 +46,8 @@ class HistoryData {
       this.tokenDecimal,
       this.tokenName,
       this.tokenSymbol,
-      this.transactionIndex);
+      this.transactionIndex,
+      this.isError);
 
   factory HistoryData.fromJson(Map<String, dynamic> json) =>
       _$HistoryDataFromJson(json);

@@ -11,4 +11,5 @@ const Map<String, String> zhAssets = {
   'send': '转账',
   'receive': '收款',
   'cancel': '取消',
+  'transfer': '转账',
 };

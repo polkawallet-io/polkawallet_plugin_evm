@@ -11,4 +11,5 @@ const Map<String, String> enAssets = {
   'send': 'Transfer',
   'receive': 'Receive',
   'cancel': 'Cancel',
+  'transfer': 'Transfer',
 };

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
+import 'package:polkawallet_plugin_evm/pages/assets/transferDetailPage.dart';
 import 'package:polkawallet_plugin_evm/service/index.dart';
 import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
@@ -67,6 +68,7 @@ class PluginEvm extends PolkawalletPlugin {
     return {
       ManageAssetsPage.route: (_) => ManageAssetsPage(this),
       TokenDetailPage.route: (_) => TokenDetailPage(this),
+      TransferDetailPage.route: (_) => TransferDetailPage(this),
     };
   }
 
@@ -83,23 +85,15 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   Map<String, Widget> tokenIcons = {};
 
-  String get nativeToken => network_native_token[network]!;
+  String get nativeToken => network_native_token[network.toLowerCase()]!;
 
   List<String> networkList() {
     return network_node_list.keys.toList();
   }
 
   static Widget getIcon(networkName) {
-    switch (networkName) {
-      case network_karura:
-        return Image.asset(
-            'packages/polkawallet_plugin_evm/assets/images/networkIcon/KAR.png');
-      case network_acala:
-        return Image.asset(
-            'packages/polkawallet_plugin_evm/assets/images/networkIcon/ACA.png');
-    }
     return Image.asset(
-        'packages/polkawallet_plugin_evm/assets/images/networkIcon/ACA.png');
+        'packages/polkawallet_plugin_evm/assets/images/networkIcon/$networkName.png');
   }
 
   Map<String, Widget> _getTokenIcons() {
@@ -114,7 +108,6 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   List<TokenBalanceData> get noneNativeTokensAll {
     return store?.assets.tokenBalanceMap.values.toList() ?? [];
-    // return [];
   }
 
   PluginStore? _store;
@@ -142,7 +135,9 @@ class PluginEvm extends PolkawalletPlugin {
     connected = true;
     if (keyring.current.address != null) {
       updateBalanceNoneNativeTokensAll();
-      _getSubstrateAccount(keyring.current.toKeyPairData());
+      if (network == network_acala || network == network_karura) {
+        _getSubstrateAccount(keyring.current.toKeyPairData());
+      }
     }
   }
 
@@ -152,7 +147,9 @@ class PluginEvm extends PolkawalletPlugin {
     _loadAccoundData(acc);
     if (connected) {
       updateBalanceNoneNativeTokensAll();
-      _getSubstrateAccount(acc);
+      if (network == network_acala || network == network_karura) {
+        _getSubstrateAccount(acc);
+      }
     }
   }
 

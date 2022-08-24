@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:polkawallet_plugin_evm/common/constants.dart';
+import 'package:polkawallet_plugin_evm/pages/assets/transferDetailPage.dart';
 
 import 'package:polkawallet_ui/utils/i18n.dart';
 import 'package:polkawallet_plugin_evm/polkawallet_plugin_evm.dart';
@@ -94,7 +96,7 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                   ),
                   onPressed: () {
                     final snLink =
-                        'https://blockscout.${widget.plugin.nodeList.first.endpoint!.split("://").last.split("/").first}/address/${widget.plugin.service!.keyring.current.address}';
+                        '${network_url_scan[widget.plugin.network]!['url']}/address/${widget.plugin.service!.keyring.current.address}';
                     UI.launchURL(snLink);
                   })),
         ],
@@ -133,8 +135,10 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
           final txs = list.toList();
           if (_txFilterIndex > 0) {
             txs.retainWhere((e) =>
-                (_txFilterIndex == 1 ? e.to : e.from) ==
-                widget.plugin.service!.keyring.current.address);
+                (_txFilterIndex == 1
+                    ? e.to!.toLowerCase()
+                    : e.from!.toLowerCase()) ==
+                widget.plugin.service!.keyring.current.address!.toLowerCase());
           }
 
           final titleColor = Theme.of(context).cardColor;
@@ -309,9 +313,10 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                               return TransferListItem(
                                 data: txs[i],
                                 token: token,
-                                isOut: txs[i].from ==
+                                isOut: txs[i].from!.toLowerCase() ==
                                     widget.plugin.service!.keyring.current
-                                        .address,
+                                        .address!
+                                        .toLowerCase(),
                               );
                             },
                           ),
@@ -506,21 +511,32 @@ class TransferListItem extends StatelessWidget {
     final amount = Fmt.priceFloorBigInt(
         BigInt.parse(data!.value!), token?.decimals ?? 12,
         lengthMax: 6);
+    if (data!.tokenName == null) {
+      data!.tokenName = token!.name;
+      data!.tokenDecimal = token!.decimals.toString();
+      data!.tokenSymbol = token!.symbol;
+    }
 
     return ListTile(
       dense: true,
       minLeadingWidth: 32,
       horizontalTitleGap: 8,
-      leading: isOut!
+      leading: data!.isError != null && data!.isError == '1'
           ? TransferIcon(
-              type: TransferIconType.rollOut,
+              type: TransferIconType.failure,
               bgColor: Theme.of(context).cardColor)
-          : TransferIcon(
-              type: TransferIconType.rollIn, bgColor: Color(0xFFD7D7D7)),
+          : isOut!
+              ? TransferIcon(
+                  type: TransferIconType.rollOut,
+                  bgColor: Theme.of(context).cardColor)
+              : TransferIcon(
+                  type: TransferIconType.rollIn,
+                  bgColor: Theme.of(context).cardColor),
       title: Text('$title${crossChain != null ? ' ($crossChain)' : ''}',
           style: Theme.of(context).textTheme.headline4),
       subtitle: Text(Fmt.dateTime(DateTime.fromMillisecondsSinceEpoch(
-          int.parse(data!.timeStamp!) * 1000))),
+          int.parse(data!.timeStamp!) * 1000,
+          isUtc: true))),
       trailing: Container(
         width: 110,
         child: Row(
@@ -538,11 +554,11 @@ class TransferListItem extends StatelessWidget {
         ),
       ),
       onTap: () {
-        // Navigator.pushNamed(
-        //   context,
-        //   TransferDetailPage.route,
-        //   arguments: data,
-        // );
+        Navigator.pushNamed(
+          context,
+          TransferDetailPage.route,
+          arguments: data,
+        );
       },
     );
   }
