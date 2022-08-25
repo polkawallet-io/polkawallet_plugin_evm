@@ -20,6 +20,7 @@ import 'package:polkawallet_ui/utils/index.dart';
 import 'package:polkawallet_ui/components/v3/dialog.dart';
 import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 import 'package:rive/src/widgets/rive_animation.dart';
+import 'package:polkawallet_ui/pages/scanPage.dart';
 
 class ManageAssetsPage extends StatefulWidget {
   ManageAssetsPage(this.plugin);
@@ -46,6 +47,8 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
 
   bool hasFocus = false;
   bool isSeach = false;
+
+  FocusNode _focusNode = FocusNode();
 
   Future<void> _onSave() async {
     final config = Map<String, bool>.of(_tokenVisible);
@@ -427,7 +430,32 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                                     color: Theme.of(context).disabledColor,
                                     size: 20,
                                   ),
+                            suffixIcon: GestureDetector(
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                    left: 12.w, top: 10, bottom: 10),
+                                child: SvgPicture.asset(
+                                    'assets/images/scan.svg',
+                                    color: Theme.of(context).disabledColor),
+                              ),
+                              onTap: () async {
+                                final to = await Navigator.of(context)
+                                    .pushNamed(ScanPage.route);
+                                if (to != null) {
+                                  setState(() {
+                                    _filterCtrl.text =
+                                        (to as QRCodeResult).address?.address ??
+                                            "";
+                                    isSeach = true;
+                                    FocusScope.of(context)
+                                        .requestFocus(_focusNode);
+                                  });
+                                  _onInputChange(_filterCtrl.text);
+                                }
+                              },
+                            ),
                           ),
+                          focusNode: _focusNode,
                           controller: _filterCtrl,
                           style: Theme.of(context).textTheme.headline4,
                           onChanged: _onInputChange,

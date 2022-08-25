@@ -24,7 +24,7 @@ import 'package:polkawallet_ui/components/v3/plugin/pluginLoadingWidget.dart';
 import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 
 class PluginEvm extends PolkawalletPlugin {
-  PluginEvm({networkName = network_acala})
+  PluginEvm({networkName = network_ethereum})
       : basic = PluginBasicData(
             name: "evm-$networkName",
             icon: getIcon(networkName),

@@ -460,7 +460,7 @@ class BalanceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Visibility(
-                          visible: tokenValue != null,
+                          visible: tokenPrice != null && tokenPrice != 0,
                           child: Text(
                             '≈ ${Fmt.priceCurrencySymbol(tokenBalance?.priceCurrency)} ${Fmt.priceFloor(tokenValue)}',
                             style: Theme.of(context)

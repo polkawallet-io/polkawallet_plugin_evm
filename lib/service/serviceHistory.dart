@@ -11,6 +11,9 @@ class ServiceHistory {
   final PluginEvm plugin;
 
   Future<List<HistoryData>?> getHistory(String contractaddress) async {
+    if (plugin.service!.keyring.current.address == null) {
+      return null;
+    }
     if (plugin.store!.history
                 .historyMaps[plugin.service!.keyring.current.address!] !=
             null &&
@@ -37,6 +40,9 @@ class ServiceHistory {
 
   Future<List<HistoryData>?> getNativeTokenHistory(
       String contractaddress) async {
+    if (plugin.service!.keyring.current.address == null) {
+      return null;
+    }
     if (plugin.store!.history
                 .historyMaps[plugin.service!.keyring.current.address!] !=
             null &&
