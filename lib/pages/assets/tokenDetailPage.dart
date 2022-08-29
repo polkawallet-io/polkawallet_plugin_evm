@@ -5,13 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/transferDetailPage.dart';
-
-import 'package:polkawallet_ui/utils/i18n.dart';
 import 'package:polkawallet_plugin_evm/polkawallet_plugin_evm.dart';
 import 'package:polkawallet_plugin_evm/store/types/historyData.dart';
 import 'package:polkawallet_plugin_evm/utils/i18n/index.dart';
 import 'package:polkawallet_sdk/plugin/store/balances.dart';
-import 'package:polkawallet_sdk/storage/keyring.dart';
 import 'package:polkawallet_sdk/utils/i18n.dart';
 import 'package:polkawallet_ui/components/TransferIcon.dart';
 import 'package:polkawallet_ui/components/listTail.dart';
@@ -26,7 +23,6 @@ import 'package:polkawallet_ui/components/v3/roundedCard.dart';
 import 'package:polkawallet_ui/pages/accountQrCodePage.dart';
 import 'package:polkawallet_ui/utils/format.dart';
 import 'package:polkawallet_ui/utils/index.dart';
-import 'package:intl/intl.dart';
 
 class TokenDetailPage extends StatefulWidget {
   const TokenDetailPage(this.plugin, {Key? key}) : super(key: key);
@@ -182,13 +178,17 @@ class _TokenDetailPageSate extends State<TokenDetailPage> {
                               ),
                               text: dic['send']!,
                               onPressed: () {
-                                // Navigator.pushNamed(
-                                //   context,
-                                //   TransferPage.route,
-                                //   arguments: {
-                                //     'tokenNameId': token.tokenNameId
-                                //   },
-                                // );
+                                Navigator.pushNamed(
+                                  context,
+                                  '/eth/assets/transfer',
+                                  arguments: {
+                                    'token': {
+                                      'symbol': tokenSymbol,
+                                      'id': balance.id,
+                                      'decimals': balance.decimals,
+                                    },
+                                  },
+                                );
                               },
                             ),
                           ),
