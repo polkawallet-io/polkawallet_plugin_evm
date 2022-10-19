@@ -1,9 +1,9 @@
 library polkawallet_plugin_evm;
 
-import 'dart:convert';
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:get_storage/src/storage_impl.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
@@ -11,22 +11,21 @@ import 'package:polkawallet_plugin_evm/pages/assets/transferDetailPage.dart';
 import 'package:polkawallet_plugin_evm/service/index.dart';
 import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
-import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
 import 'package:polkawallet_sdk/api/types/networkParams.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:polkawallet_sdk/plugin/homeNavItem.dart';
 import 'package:polkawallet_sdk/plugin/index.dart';
+import 'package:polkawallet_sdk/plugin/store/balances.dart';
 import 'package:polkawallet_sdk/storage/keyring.dart';
 import 'package:polkawallet_sdk/storage/keyringEVM.dart';
-import 'package:polkawallet_sdk/plugin/store/balances.dart';
-import 'package:get_storage/src/storage_impl.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:polkawallet_ui/components/v3/plugin/pluginLoadingWidget.dart';
 import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
+import 'package:polkawallet_ui/components/v3/plugin/pluginLoadingWidget.dart';
 
 class PluginEvm extends PolkawalletPlugin {
   PluginEvm({networkName = network_ethereum})
       : basic = PluginBasicData(
-            name: "evm-$networkName",
+            name: networkName != network_ethereum
+                ? "evm-$networkName"
+                : network_ethereum,
             icon: getIcon(networkName),
             primaryColor: _createMaterialColor(const Color(0xFF10B95D)),
             gradientColor: const Color(0xFF9ABD16),
