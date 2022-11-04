@@ -27,7 +27,7 @@ class WalletApi {
   static Future<Map?> getHistory(
       String network, String address, String contractaddress) async {
     final url =
-        '${network_url_api[network]}/api?module=account&action=tokentx&address=$address&contractaddress=$contractaddress&sort=desc';
+        '${block_explorer_url[network]}/api?module=account&action=tokentx&address=$address&contractaddress=$contractaddress&sort=desc';
     try {
       Response res = await get(Uri.parse(url));
       if (res == null) {
@@ -44,7 +44,7 @@ class WalletApi {
   static Future<Map?> getNativeTokenHistory(
       String network, String address) async {
     final url =
-        '${network_url_api[network]}/api?module=account&action=txlist&address=$address&sort=desc';
+        '${block_explorer_url[network]}/api?module=account&action=txlist&address=$address&sort=desc';
     try {
       Response res = await get(Uri.parse(url));
       if (res == null) {

@@ -6,8 +6,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get_storage/src/storage_impl.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/pages/assets/manageAssetsPage.dart';
-import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
-import 'package:polkawallet_plugin_evm/pages/assets/transferDetailPage.dart';
 import 'package:polkawallet_plugin_evm/service/index.dart';
 import 'package:polkawallet_plugin_evm/service/walletApi.dart';
 import 'package:polkawallet_plugin_evm/store/index.dart';
@@ -66,8 +64,6 @@ class PluginEvm extends PolkawalletPlugin {
   Map<String, WidgetBuilder> getRoutes(Keyring keyring) {
     return {
       ManageAssetsPage.route: (_) => ManageAssetsPage(this),
-      TokenDetailPage.route: (_) => TokenDetailPage(this),
-      TransferDetailPage.route: (_) => TransferDetailPage(this),
     };
   }
 
@@ -126,7 +122,7 @@ class PluginEvm extends PolkawalletPlugin {
     _service = PluginService(keyring, this);
 
     _loadAccoundData(keyring.current.toKeyPairData());
-    await _loadWallet();
+    _loadSupportedTokenIcons();
   }
 
   @override
@@ -232,7 +228,7 @@ class PluginEvm extends PolkawalletPlugin {
     balances.isTokensFromCache = true;
   }
 
-  Future<void> _loadWallet() async {
+  Future<void> _loadSupportedTokenIcons() async {
     final data = await WalletApi.getTokenIcons();
     if (data != null) {
       tokenIcons.addAll(data.map((k, v) {

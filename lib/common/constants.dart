@@ -2,20 +2,15 @@ const network_acala = 'acala';
 const network_karura = 'karura';
 const network_ethereum = 'ethereum';
 
+const ethTokenDetailPageRoute = '/assets/token/detail';
+
 const network_native_token = {
   network_acala: 'ACA',
   network_karura: 'KAR',
   network_ethereum: 'ETH'
 };
 
-//history api base network
-const network_url_api = {
-  network_acala: 'https://blockscout.acala-dev.aca-dev.network',
-  network_karura: 'https://blockscout.karura-dev.aca-dev.network',
-  network_ethereum: 'https://api.etherscan.io'
-};
-
-const network_url_scan = {
+const block_explorer_url = {
   network_acala: {
     'name': 'Blockscout',
     'url': 'https://blockscout.acala-dev.aca-dev.network'
@@ -29,37 +24,38 @@ const network_url_scan = {
 
 const network_node_list = {
   network_ethereum: [
+    // {
+    //   'name': 'ethereum',
+    //   'ss58': 2,
+    //   'endpoint':
+    //       'https://mainnet.infura.io/v3/069fb89d9e594d68b3e2dff06a1592b4',
+    //   'chainId': '1',
+    //   'networkType': 'ethereum',
+    // },
     {
-      'name': 'ethereum',
+      'name': 'Ethereum (dev node)',
       'ss58': 2,
       'endpoint':
-          'https://mainnet.infura.io/v3/069fb89d9e594d68b3e2dff06a1592b4',
+          'https://goerli.infura.io/v3/069fb89d9e594d68b3e2dff06a1592b4',
       'chainId': '597',
       'networkType': 'ethereum',
-    },
-    // {
-    //   'name': 'Ethereum (dev node)',
-    //   'ss58': 2,
-    //   'endpoint': 'https://ropsten.infura.io/v3/069fb89d9e594d68b3e2dff06a1592b4',
-    //   'chainId': '597',
-    //   'networkType': 'ethereum',
-    // }
+    }
   ],
   network_acala: [
     {
-      'name': 'acala (via RadiumBlock)',
+      'name': 'acala EVM (dev)',
       'ss58': 2,
-      'endpoint': 'https://acala-dev.aca-dev.network/eth/http',
-      'chainId': '596',
+      'endpoint': 'https://eth-rpc-acala-testnet.aca-staging.network',
+      'chainId': '597',
       'networkType': 'ethereum',
     }
   ],
   network_karura: [
     {
-      'name': 'karura (via RadiumBlock)',
+      'name': 'karura EVM (dev)',
       'ss58': 2,
-      'endpoint': 'https://karura-dev.aca-dev.network/eth/http',
-      'chainId': '597',
+      'endpoint': 'https://eth-rpc-karura-testnet.aca-staging.network',
+      'chainId': '596',
       'networkType': 'ethereum',
     }
   ]

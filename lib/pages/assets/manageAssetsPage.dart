@@ -1,26 +1,23 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:polkawallet_plugin_evm/pages/assets/tokenDetailPage.dart';
+import 'package:polkawallet_plugin_evm/common/constants.dart';
 import 'package:polkawallet_plugin_evm/polkawallet_plugin_evm.dart';
-import 'package:polkawallet_plugin_evm/store/index.dart';
 import 'package:polkawallet_plugin_evm/utils/i18n/index.dart';
 import 'package:polkawallet_sdk/plugin/store/balances.dart';
 import 'package:polkawallet_sdk/utils/i18n.dart';
 import 'package:polkawallet_ui/components/tokenIcon.dart';
 import 'package:polkawallet_ui/components/v3/back.dart';
+import 'package:polkawallet_ui/components/v3/dialog.dart';
 import 'package:polkawallet_ui/components/v3/index.dart' as v3;
+import 'package:polkawallet_ui/pages/scanPage.dart';
 import 'package:polkawallet_ui/utils/format.dart';
 import 'package:polkawallet_ui/utils/i18n.dart';
 import 'package:polkawallet_ui/utils/index.dart';
-import 'package:polkawallet_ui/components/v3/dialog.dart';
-import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 import 'package:rive/src/widgets/rive_animation.dart';
-import 'package:polkawallet_ui/pages/scanPage.dart';
 
 class ManageAssetsPage extends StatefulWidget {
   ManageAssetsPage(this.plugin);
@@ -157,7 +154,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                       fullName: e['name'],
                       decimals: e['decimals'],
                       amount: e['amount'],
-                      detailPageRoute: TokenDetailPage.route,
+                      detailPageRoute: ethTokenDetailPageRoute,
                     ))
                 .toList();
           });
