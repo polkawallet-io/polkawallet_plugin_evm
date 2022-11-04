@@ -2,7 +2,7 @@ const network_acala = 'acala';
 const network_karura = 'karura';
 const network_ethereum = 'ethereum';
 
-const ethTokenDetailPageRoute = '/assets/token/detail';
+const ethTokenDetailPageRoute = '/eth/token/detail';
 
 const network_native_token = {
   network_acala: 'ACA',
@@ -13,13 +13,19 @@ const network_native_token = {
 const block_explorer_url = {
   network_acala: {
     'name': 'Blockscout',
-    'url': 'https://blockscout.acala-dev.aca-dev.network'
+    'url': 'https://blockscout.acala-dev.aca-dev.network',
+    'api': 'https://blockscout.acala-dev.aca-dev.network',
   },
   network_karura: {
     'name': 'Blockscout',
-    'url': 'https://blockscout.karura-dev.aca-dev.network'
+    'url': 'https://blockscout.karura-dev.aca-dev.network',
+    'api': 'https://blockscout.karura-dev.aca-dev.network',
   },
-  network_ethereum: {'name': 'Etherscan', 'url': 'https://etherscan.io'}
+  network_ethereum: {
+    'name': 'Etherscan',
+    'url': 'https://etherscan.io',
+    'api': 'https://api.etherscan.io'
+  }
 };
 
 const network_node_list = {
