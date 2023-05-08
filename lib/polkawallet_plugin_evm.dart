@@ -1,7 +1,6 @@
 library polkawallet_plugin_evm;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get_storage/src/storage_impl.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
@@ -19,19 +18,25 @@ import 'package:polkawallet_sdk/storage/types/keyPairData.dart';
 import 'package:polkawallet_ui/components/v3/plugin/pluginLoadingWidget.dart';
 
 class PluginEvm extends PolkawalletPlugin {
-  PluginEvm({networkName = network_ethereum})
+  PluginEvm(
+      {networkName = network_ethereum,
+      config = const {'nodeList': network_node_list}})
       : basic = PluginBasicData(
-            name: networkName != network_ethereum
+            name: networkName == network_acala || networkName == network_karura
                 ? "evm-$networkName"
-                : network_ethereum,
+                : networkName,
             icon: getIcon(networkName),
             primaryColor: _createMaterialColor(const Color(0xFF10B95D)),
             gradientColor: const Color(0xFF9ABD16),
             jsCodeVersion: 33401,
             isTestNet: false),
-        network = networkName;
+        network = networkName,
+        _ethConfig = config;
+
   @override
   final PluginBasicData basic;
+
+  Map? _ethConfig;
 
   String network;
 
@@ -72,8 +77,8 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   List<NetworkParams> get nodeList {
-    return network_node_list[network]!
-        .map((e) => NetworkParams.fromJson(e))
+    return _getNetworkNodeList()[network]!
+        .map((e) => NetworkParams.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -83,12 +88,14 @@ class PluginEvm extends PolkawalletPlugin {
   String get nativeToken => network_native_token[network.toLowerCase()]!;
 
   List<String> networkList() {
-    return network_node_list.keys.toList();
+    return _getNetworkNodeList().keys.toList();
   }
 
   static Widget getIcon(networkName) {
+    final iconName =
+        networkName == network_goerli ? network_ethereum : networkName;
     return Image.asset(
-        'packages/polkawallet_plugin_evm/assets/images/networkIcon/$networkName.png');
+        'packages/polkawallet_plugin_evm/assets/images/networkIcon/$iconName.png');
   }
 
   Map<String, Widget> _getTokenIcons() {
@@ -121,7 +128,7 @@ class PluginEvm extends PolkawalletPlugin {
 
     _service = PluginService(keyring, this);
 
-    _loadAccoundData(keyring.current.toKeyPairData());
+    _loadAccountData(keyring.current.toKeyPairData());
     _loadSupportedTokenIcons();
   }
 
@@ -139,7 +146,7 @@ class PluginEvm extends PolkawalletPlugin {
   @override
   Future<void> onAccountChanged(KeyPairData acc) async {
     store!.account.setSubstrate(null, acc);
-    _loadAccoundData(acc);
+    _loadAccountData(acc);
     if (connected) {
       updateBalanceNoneNativeTokensAll();
       if (network == network_acala || network == network_karura) {
@@ -222,7 +229,7 @@ class PluginEvm extends PolkawalletPlugin {
     balances.isTokensFromCache = false;
   }
 
-  void _loadAccoundData(KeyPairData acc) {
+  void _loadAccountData(KeyPairData acc) {
     store!.assets.loadCache(acc);
     store!.account.loadCache(acc);
     balances.isTokensFromCache = true;
@@ -251,5 +258,11 @@ class PluginEvm extends PolkawalletPlugin {
                   ));
       }));
     }
+  }
+
+  Map<String, List> _getNetworkNodeList() {
+    return Map<String, List>.from(_ethConfig == null
+        ? network_node_list
+        : _ethConfig!['nodeList'] ?? network_node_list);
   }
 }

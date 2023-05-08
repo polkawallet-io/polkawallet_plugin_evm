@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:polkawallet_plugin_evm/common/constants.dart';
 
@@ -9,17 +11,15 @@ class WalletApi {
 
   static Future<Map?> getTokenIcons() async {
     //TODO:
-    // final url = '$_configEndpoint/config/evmTokenIcons.json';
-    final url = '$_endpoint/config/evmTokenIcons.json'; //dev
+    // const url = '$_configEndpoint/config/evmTokenIcons.json';
+    const url = '$_endpoint/devConfiguration/config/evmTokenIcons.json'; //dev
     try {
       Response res = await get(Uri.parse(url));
-      if (res == null) {
-        return null;
-      } else {
-        return jsonDecode(utf8.decode(res.bodyBytes));
-      }
+      return jsonDecode(utf8.decode(res.bodyBytes));
     } catch (err) {
-      print(err);
+      if (kDebugMode) {
+        print(err);
+      }
       return null;
     }
   }
