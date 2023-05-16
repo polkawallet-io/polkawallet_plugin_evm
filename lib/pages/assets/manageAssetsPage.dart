@@ -40,12 +40,12 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   Timer? _delayTimer;
   bool _isLoading = false;
 
-  List<TokenBalanceData> _seachBalance = [];
+  List<TokenBalanceData> _searchBalance = [];
 
   bool hasFocus = false;
   bool isSeach = false;
 
-  FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNode = FocusNode();
 
   Future<void> _onSave() async {
     final config = Map<String, bool>.of(_tokenVisible);
@@ -124,12 +124,9 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
 
   Future<void> _onInputChange(String input) async {
     setState(() {
-      _seachBalance = [];
+      _searchBalance = [];
     });
-    if (Fmt.isAddressETH(input.trim()) &&
-        widget.plugin.noneNativeTokensAll.indexWhere((element) =>
-                element.id!.toLowerCase() == input.trim().toLowerCase()) <
-            0) {
+    if (Fmt.isAddressETH(input.trim())) {
       if (_delayTimer != null) {
         _delayTimer!.cancel();
       }
@@ -142,23 +139,27 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
               .getTokenBalance(widget.plugin.service!.keyring.current.address!,
                   [input.trim()]);
           setState(() {
+            if (tokenBalance != null) {
+              final e = tokenBalance[0];
+              _searchBalance = [
+                TokenBalanceData(
+                  id: e['contractAddress'],
+                  tokenNameId: e['contractAddress'],
+                  symbol: e['symbol'],
+                  name: e['symbol'] == widget.plugin.nativeToken
+                      ? "W${e['symbol']}"
+                      : e['symbol'],
+                  fullName: e['name'],
+                  decimals: int.tryParse(e['decimals'].toString()) ?? 18,
+                  amount: e['amount'].toString(),
+                  detailPageRoute: ethTokenDetailPageRoute,
+                )
+              ];
+            }
             _isLoading = false;
-            _seachBalance = (tokenBalance ?? [])
-                .map((e) => TokenBalanceData(
-                      id: e['contractAddress'],
-                      tokenNameId: e['contractAddress'],
-                      symbol: e['symbol'],
-                      name: e['symbol'] == widget.plugin.nativeToken
-                          ? "W${e['symbol']}"
-                          : e['symbol'],
-                      fullName: e['name'],
-                      decimals: e['decimals'],
-                      amount: e['amount'],
-                      detailPageRoute: ethTokenDetailPageRoute,
-                    ))
-                .toList();
           });
-        } catch (_) {
+        } catch (err) {
+          print(err);
           setState(() {
             _isLoading = false;
           });
@@ -171,17 +172,16 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     });
   }
 
-  Widget _buildSeach() {
-    final dic = I18n.of(context)!.getDic(i18n_full_dic_evm, 'assets')!;
+  Widget _buildSearch() {
     final List<TokenBalanceData> list = [];
     if (_filterCtrl.text.trim().isNotEmpty) {
-      list.add(TokenBalanceData(
-          amount: widget.plugin.balances.native?.freeBalance?.toString() ?? "",
-          decimals: 18,
-          id: widget.plugin.nativeToken.toUpperCase(),
-          symbol: widget.plugin.nativeToken.toUpperCase(),
-          name: widget.plugin.nativeToken.toUpperCase(),
-          fullName: '${widget.plugin.basic.name} ${dic['manage.native']}'));
+      // list.add(TokenBalanceData(
+      //     amount: widget.plugin.balances.native?.freeBalance?.toString() ?? "",
+      //     decimals: 18,
+      //     id: widget.plugin.nativeToken.toUpperCase(),
+      //     symbol: widget.plugin.nativeToken.toUpperCase(),
+      //     name: widget.plugin.nativeToken.toUpperCase(),
+      //     fullName: '${widget.plugin.basic.name} ${dic['manage.native']}'));
       list.addAll(widget.plugin.noneNativeTokensAll);
 
       list.retainWhere((token) =>
@@ -189,7 +189,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           (token.name ?? '').toLowerCase().contains(_filter.toLowerCase()) ||
           (token.id ?? '').toLowerCase().contains(_filter.toLowerCase()));
 
-      for (var e in _seachBalance) {
+      for (var e in _searchBalance) {
         if (list.indexWhere(
                 (element) => element.id!.toLowerCase() == e.id!.toLowerCase()) <
             0) {
@@ -197,6 +197,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
         }
       }
     }
+
     return _tokensList(list);
   }
 
@@ -335,7 +336,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
             setState(() {
               isSeach = false;
               _filterCtrl.text = "";
-              _seachBalance = [];
+              _searchBalance = [];
               _filter = "";
             });
             FocusScope.of(context).requestFocus(FocusNode());
@@ -381,7 +382,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     setState(() {
                       isSeach = false;
                       _filterCtrl.text = "";
-                      _seachBalance = [];
+                      _searchBalance = [];
                       _filter = "";
                     });
                     FocusScope.of(context).requestFocus(FocusNode());
@@ -402,7 +403,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                             isSeach = hasFocus;
                             if (!isSeach) {
                               _filterCtrl.text = "";
-                              _seachBalance = [];
+                              _searchBalance = [];
                               _filter = "";
                             }
                           });
@@ -459,7 +460,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                         ))),
                 Expanded(
                     child: isSeach
-                        ? _buildSeach()
+                        ? _buildSearch()
                         : Column(
                             children: [
                               Container(

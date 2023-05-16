@@ -27,6 +27,11 @@ const block_explorer_url = {
     'name': 'Etherscan',
     'url': 'https://etherscan.io',
     'api': 'https://api.etherscan.io'
+  },
+  network_goerli: {
+    'name': 'Etherscan',
+    'url': 'https://goerli.etherscan.io',
+    'api': 'https://api-goerli.etherscan.io'
   }
 };
 

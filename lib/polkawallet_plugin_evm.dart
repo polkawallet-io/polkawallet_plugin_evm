@@ -77,9 +77,12 @@ class PluginEvm extends PolkawalletPlugin {
 
   @override
   List<NetworkParams> get nodeList {
-    return _getNetworkNodeList()[network]!
-        .map((e) => NetworkParams.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final available = _getNetworkNodeList()[network];
+    return available != null
+        ? available
+            .map((e) => NetworkParams.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : [];
   }
 
   @override
