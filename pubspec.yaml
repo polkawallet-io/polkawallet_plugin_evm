@@ -14,6 +14,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  polkawallet_ui: ^0.5.3
+  polkawallet_sdk: ^0.5.3
   flutter_lints: ^2.0.0
   build_runner: ^2.1.11
   mobx_codegen: ^2.0.2
@@ -21,12 +23,11 @@ dev_dependencies:
   flutter_svg: ^1.0.3
   flutter_mobx: ^2.0.0
 
-
 dependency_overrides:
-  polkawallet_sdk:
-    path: ../sdk
-  polkawallet_ui:
-    path: ../ui
+#  polkawallet_sdk:
+#    path: ../sdk
+#  polkawallet_ui:
+#    path: ../ui
   get_storage: ^2.0.2
   rive: ^0.9.0
 
