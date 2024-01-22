@@ -6,6 +6,12 @@ const network_mandala = 'mandala';
 const network_acala_dev = 'acala-dev';
 const network_karura_dev = 'karura-dev';
 
+const network_arbitrum = 'arbitrum_one';
+const network_optimism = 'optimism';
+// const network_bnb = 'BNB chain';
+// const network_polygon = 'polygon';
+// const network_avalanche = 'acalanche';
+
 const ethTokenDetailPageRoute = '/eth/token/detail';
 
 const network_native_token = {
@@ -15,7 +21,12 @@ const network_native_token = {
   network_acala: 'ACA',
   network_karura: 'KAR',
   network_goerli: 'ETH',
-  network_ethereum: 'ETH'
+  network_ethereum: 'ETH',
+  network_arbitrum: 'ETH',
+  network_optimism: 'ETH',
+  // network_bnb: 'BNB',
+  // network_polygon: 'MATIC',
+  // network_avalanche: 'AVAX'
 };
 
 const block_explorer_url = {
@@ -53,6 +64,16 @@ const block_explorer_url = {
     'name': 'Etherscan',
     'url': 'https://goerli.etherscan.io',
     'api': 'https://api-goerli.etherscan.io'
+  },
+  network_arbitrum: {
+    'name': 'Arbiscan',
+    'url': 'https://arbiscan.io',
+    'api': 'https://api.arbiscan.io'
+  },
+  network_optimism: {
+    'name': 'Etherscan',
+    'url': 'https://optimistic.etherscan.io',
+    'api': 'https://api-optimistic.etherscan.io'
   }
 };
 
@@ -121,7 +142,26 @@ const network_node_list = {
   //     'chainId': '596',
   //     'networkType': 'ethereum',
   //   }
-  // ]
+  // ],
+  network_arbitrum: [
+    {
+      'name': 'Arbitrum One',
+      'ss58': 2,
+      'endpoint':
+          'https://arbitrum-mainnet.infura.io/v3/069fb89d9e594d68b3e2dff06a1592b4',
+      'chainId': '42161',
+      'networkType': 'ethereum',
+    }
+  ],
+  network_optimism: [
+    {
+      'name': 'Optimism',
+      'ss58': 2,
+      'endpoint': 'https://mainnet.optimism.io',
+      'chainId': '10',
+      'networkType': 'ethereum',
+    }
+  ],
 };
 
 const substrate_node_list = {
